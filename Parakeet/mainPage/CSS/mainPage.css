@@ -1,0 +1,46 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.top-bar-nav {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    display: flex;
+    font-size: x-large;
+    padding-left: 400px;
+    gap: 10px;
+}
+.container {
+    display: flex;
+    justify-content: space-around;
+    padding: 20px;
+}
+.panel {
+    background-color: #f4f4f4;
+    border: 2px solid #ddd;
+    flex: 1; /* Allows outer panels to grow and shrink */
+    padding-bottom: 20%; /* Maintains aspect ratio */
+    position: relative;
+    min-width: 100px; /* Prevents panels from shrinking too much */
+    margin: 10px 10px;
+}
+.main-panel {
+    flex: 0 0 600px; /* Does not grow or shrink, fixed width */
+    height: auto;
+    padding-bottom: 200px; /* Fixed size to maintain square shape */
+}
+.panel-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
