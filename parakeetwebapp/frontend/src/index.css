@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 :root {
   background-color: rgb(255, 255, 255, 0.87);
 }
@@ -12,6 +13,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  @apply flex items-center justify-center;
 }
 
 code {

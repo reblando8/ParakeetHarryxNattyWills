@@ -1,3 +1,6 @@
+// this was the old index.js file that used to run:
+
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
