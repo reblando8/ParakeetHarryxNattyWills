@@ -1,19 +1,18 @@
 import React, {useEffect} from 'react';
-import LoginComponent from "../components/LoginComponent";
+import HomeComponent from '../components/HomeComponent.jsx'
 import { onAuthStateChanged } from 'firebase/auth';
 import {auth} from "../firebaseConfig.js"
 import { useNavigate } from "react-router-dom";
 
 
-export default function Login() {
+export default function Home() {
     let navigate = useNavigate();
     useEffect(() => {
         onAuthStateChanged(auth, res => {
-            if(res?.accessToken) {
-                navigate('/home')
+            if(!res?.accessToken) {
+                navigate('/login')
             }
         });
     }, []);
-    return <LoginComponent />;
+    return <HomeComponent />
 }
-
