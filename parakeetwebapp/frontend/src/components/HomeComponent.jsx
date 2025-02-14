@@ -1,5 +1,15 @@
 import React from "react";
+import HomeLeftComponent from "./HomeLeftComponent";
+import HomeRightComponent from "./HomeRightComponent";
+import HomeCenterComponent from "./HomeCenterComponent"
 
 export default function HomeComponent() {
-    return <div><h1>HomeComponent</h1></div>
+    return (
+        <div className="flex w-full h-screen">
+            <HomeLeftComponent/>
+            <HomeCenterComponent/>
+            <HomeRightComponent/>
+        </div>
+
+    )
 }

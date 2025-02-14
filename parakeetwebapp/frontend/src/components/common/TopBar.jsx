@@ -6,6 +6,10 @@ import { FaUserCircle } from "react-icons/fa";
 import { IoPerson, IoChevronDown } from "react-icons/io5";
 import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
+import { LogoutAPI } from "../../api/authAPI.jsx";
+import {toast} from "react-toastify"
+
+
 
 
 
@@ -15,6 +19,19 @@ const profileImage = "https://www.gravatar.com/avatar/?d=mp"; // Default avatar
 
 export default function TopBar() {
     const [isFocused, setIsFocused] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+
+    const logout = async () => {
+        try {
+            await LogoutAPI();
+            toast.success("Logged Out Successfully!");
+            navigate('/login'); // Redirect to login page after logout
+        } catch (error) {
+            console.error("Logout failed:", error);
+            toast.error("Failed to Logout. Try Again!"); // Show popup on failure
+        }
+    };
+
     let navigate = useNavigate();
     const goToRoute = (route) => {
         navigate(route);
@@ -49,35 +66,35 @@ export default function TopBar() {
                     <span className="text-sm font-medium text-gray-600">Home</span>
                 </div>
 
-                <div className="flex flex-col items-center" onClick={() => goToRoute()}>
+                <div className="flex flex-col items-center" onClick={() => goToRoute('/network')}>
                     <a className="text-gray-600 hover:text-black">
                         <BsPeopleFill className="w-6 h-6" />
                     </a>
                     <span className="text-sm font-medium text-gray-600">My Network</span>
                 </div>
 
-                <div className="flex flex-col items-center" onClick={() => goToRoute()}>
+                <div className="flex flex-col items-center" onClick={() => goToRoute('jobs')}>
                     <a className="text-gray-600 hover:text-black">
                         <BsBriefcaseFill className="w-6 h-6" />
                     </a>
                     <span className="text-sm font-medium text-gray-600">Jobs</span>
                 </div>
 
-                <div className="flex flex-col items-center" onClick={() => goToRoute()}>
+                <div className="flex flex-col items-center" onClick={() => goToRoute('/messages')}>
                     <a className="text-gray-600 hover:text-black">
                         <BsChatDotsFill className="w-6 h-6" />
                     </a>
                     <span className="text-sm font-medium text-gray-600">Messaging</span>
                 </div>
 
-                <div className="flex flex-col items-center" onClick={() => goToRoute()}>
+                <div className="flex flex-col items-center" onClick={() => goToRoute('/notifications')}>
                     <a className="text-gray-600 hover:text-black">
                         <BsBellFill className="w-6 h-6" />
                     </a>
                     <span className="text-sm font-medium text-gray-600">Notifications</span>
                 </div>
 
-                <div className="text-gray-600 hover:text-black flex flex-col items-center" onClick={() => goToRoute('/profile')}>
+                <div className="text-gray-600 hover:text-black flex flex-col items-center" onClick={logout}>
                     <img 
                         src={profileImage} 
                         alt="Profile" 
