@@ -5,6 +5,7 @@ import {auth} from "../firebaseConfig.js"
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/common/Loader.jsx"
 
+
 export default function Home() {
     const [loading, setLoading] = useState(true)
     let navigate = useNavigate();

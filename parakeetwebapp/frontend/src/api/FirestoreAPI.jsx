@@ -3,15 +3,19 @@ import { addDoc, collection, onSnapshot } from 'firebase/firestore'
 import { toast } from 'react-toastify';
 
 let dbRef = collection(firestore, 'posts');
-export const postStatus = (status) => {
+export const postStatus = (post) => {
     let object = {
-        status: status
+        status: post.status,
+        timeStamp: post.timeStamp,
+        userEmail: post.userEmail
     }
+    console.log("hello2")
     addDoc(dbRef, object)
     .then((res) => {
         toast.success("You Successfully posted!")
     })
     .catch((error) => {
+        console.log("asdf")
         console.log(error)
     })
 }

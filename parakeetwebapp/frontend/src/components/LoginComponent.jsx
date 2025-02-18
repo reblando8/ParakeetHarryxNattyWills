@@ -16,6 +16,7 @@ export default function LoginComponent() {
             const res = await LoginAPI(email, password);
             toast.success("Signed In To Parakeet!")
             navigate('/home')
+            localStorage.setItem("userEmail", res.user.email)
         } catch (error) {
             console.error("Login failed:", error);
             toast.error("Please Check Your Credentials") // Show popup
@@ -27,6 +28,7 @@ export default function LoginComponent() {
             const res = await GoogleSignInAPI();
             toast.success("Signed In To Parakeet!")
             navigate('/home')
+            localStorage.setItem("userEmail", res.user.email)
         } catch (error) {
             console.log(error)
         }

@@ -3,13 +3,21 @@ import { FaRegImage, FaVideo, FaPen } from "react-icons/fa"; // Import icons
 import ModalComponent from "../Modal/Modal"
 import { postStatus, getStatus} from "../../../api/FirestoreAPI";
 import Post from "../Post"
+import { getCurrentTimeStamp } from "../../../Helpers/UseMoment";
 
 export default function PostStatus() {
+    let userEmail = localStorage.getItem("userEmail");
     const [modalOpen, setModalOpen] = useState(false);
     const [status, setStatus] = useState('')
     const [allStatus, setAllStatus] = useState([]);
     const sendStatus = async () =>{
-        await postStatus(status);
+        // console.log(status)
+        let post = {
+            status: status,
+            timeStamp: getCurrentTimeStamp("LLL"),
+            userEmail: userEmail
+        }
+        await postStatus(post);
         await setModalOpen(false);
         await setStatus("");
     }
@@ -55,12 +63,15 @@ export default function PostStatus() {
                 </div>
             </div>
 
-            <ModalComponent modalOpen={modalOpen} setModalOpen={setModalOpen} status={status} setStatus={setStatus} sendStatus={sendStatus}/>
+            <ModalComponent
+                modalOpen={modalOpen}
+                setModalOpen={setModalOpen}
+                status={status}
+                setStatus={setStatus}
+                sendStatus={sendStatus}
+            />
             {allStatus.map((posts)=> {
-                return (
-                    console.log(typeof posts.status),
-                    Post(posts.status)
-                )
+                return <Post posts={posts} key={posts.id}/>
             })}
         </div>
     );
