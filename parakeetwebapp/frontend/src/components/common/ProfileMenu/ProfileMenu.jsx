@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { IoChevronDown } from "react-icons/io5";
-import { LogoutAPI } from "../../api/authAPI.jsx";
+import { LogoutAPI } from "../../../api/authAPI.jsx";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-export default function ProfileMenu({ profileImage }) {
+export default function ProfileMenu({currentUser}) {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef(null); // Ref for detecting off-click
     const navigate = useNavigate();
+    let profileImage =  "https://www.gravatar.com/avatar/?d=mp"; // Default avatar
 
     const toggleMenu = () => {
         setIsOpen(!isOpen);
@@ -22,6 +23,11 @@ export default function ProfileMenu({ profileImage }) {
             console.error("Logout failed:", error);
             toast.error("Failed to Logout. Try Again!");
         }
+    };
+
+    const viewProfile = () => {
+        navigate('/profile'); // Adjust the route if needed
+        setIsOpen(false);
     };
 
     // Close popup when clicking outside
@@ -61,8 +67,23 @@ export default function ProfileMenu({ profileImage }) {
             {/* Popup Card (Dropdown) */}
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-300 shadow-md rounded-lg p-2 z-50">
+                    <div 
+                        className="block w-full text-center px-4 py-2 text-gray-700 font-medium rounded-md cursor-pointer transition"
+                        onClick={viewProfile}
+                    >
+                        {currentUser.name}
+                    </div>
+                    {/* View Profile Button */}
                     <button 
-                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                        className="block w-full text-center px-4 py-2 border border-purple-500 text-purple-500 font-medium rounded-md hover:bg-purple-100 transition"
+                        onClick={viewProfile}
+                    >
+                        View Profile
+                    </button>
+
+                    {/* Logout Button */}
+                    <button 
+                        className="block w-full text-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md mt-1"
                         onClick={logout}
                     >
                         Logout

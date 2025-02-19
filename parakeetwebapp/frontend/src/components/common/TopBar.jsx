@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { LogoutAPI } from "../../api/authAPI.jsx";
 import {toast} from "react-toastify"
-import ProfileMenu from "./ProfileMenu";
+import ProfileMenu from "./ProfileMenu/ProfileMenu.jsx";
 
 
 
@@ -19,7 +19,7 @@ import ProfileMenu from "./ProfileMenu";
 const profileImage = "https://www.gravatar.com/avatar/?d=mp"; // Default avatar
 
 
-export default function TopBar() {
+export default function TopBar({currentUser}) {
     const [isFocused, setIsFocused] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
@@ -39,7 +39,7 @@ export default function TopBar() {
         navigate(route);
     }
     return(
-        <div>
+        <div className="fixed top-0 left-0 w-full text-white">
         <nav className="bg-white shadow-md py-2 px-4 flex justify-center gap-[200px]">
             <div className="flex items-center space-x-2">
                 <img src={logo} alt="Logo" className="w-12 h-12" />
@@ -96,7 +96,7 @@ export default function TopBar() {
                     <span className="text-sm font-medium text-gray-600">Notifications</span>
                 </div>
 
-                <ProfileMenu profileImage="your-profile-image-url.jpg" />
+                <ProfileMenu profileImage="your-profile-image-url.jpg" currentUser = {currentUser}/>
 
             </div>
         </nav>

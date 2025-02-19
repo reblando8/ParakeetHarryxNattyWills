@@ -3,8 +3,9 @@ import Home from '../pages/Home'
 import TopBar from '../components/common/TopBar'
 import { getCurrentUserData } from '../api/FirestoreAPI.jsx';
 import { use } from "react";
+import ProfileComponent from "../components/ProfilePageComponents/ProfileComponent.jsx";
 
-export default function HomeLayout() {
+export default function ProfileLayout() {
     const [currentUser, setCurrentUser] = useState({});
     useMemo(() => {
         getCurrentUserData(setCurrentUser)
@@ -13,7 +14,7 @@ export default function HomeLayout() {
         <div className="flex flex-col w-screen min-h-screen">
             <TopBar currentUser = {currentUser}/>
             <div className="pt-16 bg-[#f4f2ee] min-h-screen">
-                <Home currentUser={currentUser} />
+                <ProfileComponent  currentUser={currentUser} />
             </div>
         </div>
     )
