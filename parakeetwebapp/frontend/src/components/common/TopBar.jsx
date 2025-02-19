@@ -8,6 +8,8 @@ import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { LogoutAPI } from "../../api/authAPI.jsx";
 import {toast} from "react-toastify"
+import ProfileMenu from "./ProfileMenu";
+
 
 
 
@@ -94,17 +96,7 @@ export default function TopBar() {
                     <span className="text-sm font-medium text-gray-600">Notifications</span>
                 </div>
 
-                <div className="text-gray-600 hover:text-black flex flex-col items-center" onClick={logout}>
-                    <img 
-                        src={profileImage} 
-                        alt="Profile" 
-                        className="w-6 h-6 rounded-full object-cover"
-                    />
-                    <div className="flex items-center gap-1">
-                        <span className="text-sm font-medium">Me</span>
-                        <IoChevronDown className="w-4 h-4" />
-                    </div>
-                </div>
+                <ProfileMenu profileImage="your-profile-image-url.jpg" />
 
             </div>
         </nav>
