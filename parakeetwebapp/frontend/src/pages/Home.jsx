@@ -1,12 +1,16 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useMemo} from 'react';
 import HomeComponent from '../components/HomeComponent.jsx'
 import { onAuthStateChanged } from 'firebase/auth';
 import {auth} from "../firebaseConfig.js"
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/common/Loader.jsx"
+import { getCurrentUserData } from '../api/FirestoreAPI.jsx';
 
 
-export default function Home() {
+export default function Home({currentUser}) {
+    useMemo(() => {
+        getCurrentUserData()
+    }, [])
     const [loading, setLoading] = useState(true)
     let navigate = useNavigate();
     useEffect(() => {
@@ -18,5 +22,5 @@ export default function Home() {
             }
         });
     }, []);
-    return loading ? <Loader/> : <HomeComponent />
+    return loading ? <Loader/> : <HomeComponent currentUser={currentUser} />
 }

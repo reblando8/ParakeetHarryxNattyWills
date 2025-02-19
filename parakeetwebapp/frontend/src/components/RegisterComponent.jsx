@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { LoginAPI, RegisterAPI, GoogleSignInAPI } from "../api/authAPI.jsx";
 import logo from '../images/ParakeetLogo.png';
+import { postUserData } from "../api/FirestoreAPI.jsx";
 import {toast} from "react-toastify"
 import { useNavigate } from "react-router-dom";
 
@@ -8,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 export default function LoginComponent() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [name, setName] = useState("");
+
 
     const navigate = useNavigate();
 
@@ -16,7 +19,7 @@ export default function LoginComponent() {
             const res = await RegisterAPI(email, password);
             toast.success("Signed In To Parakeet!")
             navigate('/home')
-            console.log("harry")
+            postUserData({name: name, email: email});
             localStorage.setItem("userEmail", res.user.email)
         } catch (error) {
             console.error("Login failed:", error);
@@ -49,7 +52,13 @@ export default function LoginComponent() {
 
                  {/* LOGIN CONTAINER */}
                 <div className="bg-white shadow-[0px_0px_10px_rgba(0,0,0,0.1)] shadow-gray-400/50 rounded-xl p-10 w-[500px] space-y-4">
-                    
+                    <input
+                        type="text"
+                        placeholder="Your Full Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:ring-4 focus:ring-blue-500"
+                    />
                     <input
                         type="email"
                         placeholder="Email or Phone"

@@ -6,18 +6,18 @@ export default function Post({ posts }) {
     return (
         <div className="max-w-3xl mx-auto w-full px-6">
             <div className={outerCardClass}>
-
-                {/* Timestamp centered at the top */}
-                <div className="absolute top-2 left-2 text-gray-500 text-sm">
-                    {posts.timeStamp}
+                {/* Name and Timestamp aligned properly */}
+                <div className="text-gray-500 text-sm flex flex-col">
+                    <span className="font-semibold text-gray-700">{posts.userName}</span>
+                    <span className="text-xs">{posts.timeStamp}</span>
                 </div>
 
-                {/* Ensure text wraps and doesn't overflow */}
-                <div className="flex items-center mt-6 break-words">
+                {/* Status content */}
+                <div className="w-full mt-4 break-words whitespace-normal text-gray-800">
                     {posts.status}
                 </div>
-                    
             </div>
         </div>
     );
 }
+

@@ -3,19 +3,20 @@ import { FaRegImage, FaVideo, FaPen } from "react-icons/fa"; // Import icons
 import ModalComponent from "../Modal/Modal"
 import { postStatus, getStatus} from "../../../api/FirestoreAPI";
 import Post from "../Post"
+import { getUniqueID } from "../../../Helpers/getUniqueID";
 import { getCurrentTimeStamp } from "../../../Helpers/UseMoment";
 
-export default function PostStatus() {
-    let userEmail = localStorage.getItem("userEmail");
+export default function PostStatus({ currentUser }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [status, setStatus] = useState('')
     const [allStatus, setAllStatus] = useState([]);
     const sendStatus = async () =>{
-        // console.log(status)
         let post = {
             status: status,
             timeStamp: getCurrentTimeStamp("LLL"),
-            userEmail: userEmail
+            userEmail: currentUser.email,
+            userName: currentUser.name,
+            postID: getUniqueID(),
         }
         await postStatus(post);
         await setModalOpen(false);
