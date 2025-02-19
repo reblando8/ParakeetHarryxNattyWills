@@ -4,8 +4,11 @@
 
 
 :root {
-  background-color: #f4f2ee;
-}
+  overscroll-behavior: none;  /* Prevent pull-down refresh effect */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  background-color: #f4f2ee; /* Ensure consistent background */
+  min-height: 100vh;
+  touch-action: manipulation; }
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

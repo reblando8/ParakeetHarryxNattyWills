@@ -3,7 +3,7 @@ import Home from '../pages/Home'
 import TopBar from '../components/common/TopBar'
 import { getCurrentUserData } from '../api/FirestoreAPI.jsx';
 import { use } from "react";
-import ProfileComponent from "../components/ProfilePageComponents/ProfileComponent.jsx";
+import Profile from "../pages/Profile.jsx";
 
 export default function ProfileLayout() {
     const [currentUser, setCurrentUser] = useState({});
@@ -14,7 +14,7 @@ export default function ProfileLayout() {
         <div className="flex flex-col w-screen min-h-screen">
             <TopBar currentUser = {currentUser}/>
             <div className="pt-16 bg-[#f4f2ee] min-h-screen">
-                <ProfileComponent  currentUser={currentUser} />
+                <Profile  currentUser={currentUser} />
             </div>
         </div>
     )
