@@ -97,7 +97,8 @@ export default function TopBar({currentUser}) {
                 </div>
 
                 <ProfileMenu profileImage="your-profile-image-url.jpg" currentUser = {currentUser}/>
-
+                            //testing comment
+                            
             </div>
         </nav>
     </div>
