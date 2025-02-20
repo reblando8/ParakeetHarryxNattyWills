@@ -1,15 +1,12 @@
-// tailwind.config.js
+/** @type {import('tailwindcss').Config} */
 module.exports = {
+  purge: ['./src/**/*.{js,jsx,ts,tsx}', './public/index.html'],
+  darkMode: false, // or 'media' or 'class'
   theme: {
-    extend: {
-      fontFamily: {
-        sans: ['"Source Sans 3"', 'sans-serif'],
-      },
-    },
+    extend: {},
   },
-  // Ensure Tailwind processes your HTML and CSS files
-  content: [
-    './src/**/*.{html,js,jsx,ts,tsx,vue}',
-    './public/index.html',
-  ],
-};
+  variants: {
+    extend: {},
+  },
+  plugins: [],
+}
