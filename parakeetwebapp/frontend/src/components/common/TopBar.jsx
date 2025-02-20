@@ -39,7 +39,7 @@ export default function TopBar({currentUser}) {
         navigate(route);
     }
     return(
-        <div className="fixed top-0 left-0 w-full text-white">
+        <div className="fixed top-0 left-0 w-full text-white z-[100]">
         <nav className="bg-white shadow-md py-2 px-4 flex justify-center gap-[200px]">
             <div className="flex items-center space-x-2">
                 <img src={logo} alt="Logo" className="w-12 h-12 cursor-pointer" onClick={() => goToRoute('/home')}/>
