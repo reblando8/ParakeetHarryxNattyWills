@@ -1,11 +1,16 @@
-import React from "react";
-import PostUpdate from '../common/PostUpdate/postUpdate'
+import React, {useState} from "react";
 import ProfileCard from "../common/ProfileCard/ProfileCard";
+import ProfileCardEdit from "../common/ProfileCard/ProfileCardEdit";
 
 export default function ProfileCenterComponent({currentUser}) {
+    const [isEditing, setIsEditing] = useState(false);
+    const onEdit = () => {
+        console.log("Hello")
+        setIsEditing(!isEditing);
+    }
     return (
         <div className="flex-1 p-4 bg-[#f4f2ee] min-w-[900px]">
-            <ProfileCard currentUser={currentUser} />
+            { isEditing ? (<ProfileCardEdit onEdit={onEdit}/>) : (<ProfileCard currentUser={currentUser} onEdit={onEdit}/>)}
         </div>
 
     )
