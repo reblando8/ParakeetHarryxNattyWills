@@ -44,7 +44,7 @@ export default function PostStatus({ currentUser }) {
 
     return (
         <div className="w-full max-w-4xl mx-auto">
-            <div className={outerCardClass}>
+            <div className={`${outerCardClass} mt-8`}>
                 <div className="flex items-center space-x-4">
                     {/* Profile Picture */}
                     <img 
