@@ -1,12 +1,11 @@
 import {firestore, auth} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot } from 'firebase/firestore'
+import { addDoc, collection, onSnapshot, doc, updateDoc } from 'firebase/firestore'
 import { toast } from 'react-toastify';
 
-let dbRef = collection(firestore, 'posts');
 let postsRef = collection(firestore, 'posts');
 let usersRef = collection(firestore, 'users');
 export const postStatus = (post) => {
-    addDoc(dbRef, post)
+    addDoc(postsRef, post)
     .then(() => {
         toast.success("You Successfully posted!")
     })
@@ -18,7 +17,7 @@ export const postStatus = (post) => {
 
 
 export const getStatus = (setAllStatus) => {
-    onSnapshot(dbRef, (response) => {
+    onSnapshot(postsRef, (response) => {
         setAllStatus(response.docs.map((docs) => {
             return { ...docs.data(), id: docs.id};
         }))
@@ -50,3 +49,15 @@ export const getCurrentUserData = (setCurrentUser) => {
         );
     });
 }
+
+export const updateUserData = (userID, payload) => {
+    let userToUpdate = doc(usersRef, userID);
+    updateDoc(userToUpdate, payload)
+    .then(() => {
+        toast.success("You Successfully Updated Your Profile!")
+    })
+    .catch((error) => {
+        console.log(error)
+    })
+};
+

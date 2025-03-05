@@ -8,7 +8,7 @@ export default function ProfileCardHomePage({ currentUser }) {
                 {/* Profile Picture and Name */}
                 <div className="flex items-center space-x-3">
                     <img 
-                        src={currentUser.profilePicture || "https://via.placeholder.com/50"} 
+                        src={"https://via.placeholder.com/50"} 
                         alt="Profile" 
                         className="w-10 h-10 rounded-full"
                     />

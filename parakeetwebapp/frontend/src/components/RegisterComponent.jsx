@@ -19,7 +19,23 @@ export default function LoginComponent() {
             const res = await RegisterAPI(email, password);
             toast.success("Signed In To Parakeet!")
             navigate('/home')
-            postUserData({name: name, email: email});
+            postUserData({
+                name: name,
+                email: email,
+                achievements: "",
+                careerHighlights: "",
+                education: "",
+                experience: "",
+                height: "",
+                interests: "",
+                location: "",
+                position: "",
+                sport: "",
+                stats: "",
+                team: "",
+                updatedAt: new Date().toISOString(),  // Generates current timestamp
+                weight: ""
+            });
             localStorage.setItem("userEmail", res.user.email)
         } catch (error) {
             console.error("Login failed:", error);
