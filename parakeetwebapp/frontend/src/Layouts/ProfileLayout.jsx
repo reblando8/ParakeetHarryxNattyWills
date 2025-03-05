@@ -12,8 +12,8 @@ export default function ProfileLayout() {
     }, [])
     return(
         <div className="flex flex-col w-screen min-h-screen">
-            <TopBar currentUser={currentUser} className="fixed top-0 left-0 w-full" />
-            <div className="z-10 pt-16 bg-[#f4f2ee] min-h-screen">
+            {/* <TopBar currentUser={currentUser} className="fixed top-0 left-0 w-full" /> */}
+            <div className="z-10 bg-[#f4f2ee] min-h-screen">
                 <Profile  currentUser={currentUser} />
             </div>
         </div>

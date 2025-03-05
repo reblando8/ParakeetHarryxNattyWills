@@ -5,11 +5,19 @@ import { postStatus, getStatus} from "../../../api/FirestoreAPI";
 import Post from "../Post"
 import { getUniqueID } from "../../../Helpers/getUniqueID";
 import { getCurrentTimeStamp } from "../../../Helpers/UseMoment";
+import { useNavigate } from "react-router-dom";
+import logo from '../../../images/profile-user-svgrepo-com.svg';
 
 export default function PostStatus({ currentUser }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [status, setStatus] = useState('')
     const [allStatus, setAllStatus] = useState([]);
+    const navigate = useNavigate();
+
+    const goToProfile = () => {
+        navigate('/profile');
+    };
+
     const sendStatus = async () =>{
         let post = {
             status: status,
@@ -28,18 +36,23 @@ export default function PostStatus({ currentUser }) {
     }, [])
 
     const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg p-4 w-full px-10 min-h-[110px]";
-    const profileImgClass = "w-12 h-12 rounded-full"; // Profile image styling
+    const profileImgClass = "w-16 h-16 rounded-full cursor-pointer hover:opacity-80 transition-opacity border-2 border-gray-300";
     const inputBoxClass = "flex-1 bg-gray-100 border border-gray-300 rounded-full px-4 py-2 cursor-pointer text-gray-600";
     const buttonClass = "flex items-center space-x-2 text-gray-600 hover:text-blue-500 cursor-pointer";
     const modalClass = "fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50";
-    const modalContentClass = "bg-white p-6 rounded-lg shadow-lg w-full max-w-lg"; // Ensures responsiveness
+    const modalContentClass = "bg-white p-6 rounded-lg shadow-lg w-full max-w-lg";
 
     return (
-        <div className="max-w-3xl mx-auto w-full px-6">
+        <div className="w-full max-w-4xl mx-auto">
             <div className={outerCardClass}>
                 <div className="flex items-center space-x-4">
                     {/* Profile Picture */}
-                    <img src="https://via.placeholder.com/50" alt="Profile" className={profileImgClass} />
+                    <img 
+                        src={logo} 
+                        alt="Profile" 
+                        className={profileImgClass}
+                        onClick={goToProfile}
+                    />
 
                     {/* Clickable Input Box */}
                     <div className={inputBoxClass} onClick={() => setModalOpen(true)}>
@@ -48,7 +61,7 @@ export default function PostStatus({ currentUser }) {
                 </div>
 
                 {/* Buttons Below Input */}
-                <div className="flex justify-between mt-3 px-2">
+                <div className="flex gap-8 mt-3 px-2">
                     <button className={buttonClass}>
                         <FaRegImage className="text-green-500" />
                         <span>Photo</span>
@@ -71,9 +84,11 @@ export default function PostStatus({ currentUser }) {
                 setStatus={setStatus}
                 sendStatus={sendStatus}
             />
-            {allStatus.map((posts)=> {
-                return <Post posts={posts} key={posts.id}/>
-            })}
+            <div className="w-full">
+                {allStatus.map((posts)=> {
+                    return <Post posts={posts} key={posts.id}/>
+                })}
+            </div>
         </div>
     );
 }

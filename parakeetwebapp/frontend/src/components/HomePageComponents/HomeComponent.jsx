@@ -5,11 +5,10 @@ import HomeCenterComponent from "./HomeCenterComponent"
 
 export default function HomeComponent({currentUser}) {
     return (
-        <div className="flex w-full h-screen">
+        <div className="flex w-full h-full">
             <HomeLeftComponent currentUser = {currentUser}/>
             <HomeCenterComponent currentUser = {currentUser}/>
             <HomeRightComponent/>
         </div>
-
     )
 }

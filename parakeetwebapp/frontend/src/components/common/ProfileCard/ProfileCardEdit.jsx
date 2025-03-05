@@ -42,7 +42,7 @@ export default function ProfileCard({ currentUser, onEdit }) {
 
     return (
         <>
-            <div className="relative bg-white border border-gray-300 shadow-md rounded-lg p-8 w-full max-w-3xl mx-auto min-h-[250px] mb-16">
+            <div className="relative bg-white border border-gray-300 shadow-md rounded-lg p-8 w-full mb-16">
                 <button 
                     onClick={onEdit} 
                     className="absolute top-2 right-2 bg-gray-500 text-white px-2 py-1 rounded text-xs font-bold cursor-pointer hover:bg-gray-600"

@@ -11,8 +11,8 @@ export default function HomeLayout() {
     }, [])
     return(
         <div className="flex flex-col w-screen min-h-screen">
-            <TopBar currentUser = {currentUser}/>
-            <div className="pt-16 bg-[#f4f2ee] min-h-screen">
+            {/* <TopBar currentUser = {currentUser}/> */}
+            <div className="bg-[#f4f2ee] min-h-screen">
                 <Home currentUser={currentUser} />
             </div>
         </div>

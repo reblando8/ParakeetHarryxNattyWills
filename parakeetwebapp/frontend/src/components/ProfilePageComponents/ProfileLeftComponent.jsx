@@ -1,10 +1,12 @@
 import React from "react";
+import SideBar from "../common/SideBar";
 
-export default function ProfileLeftComponent() {
-    return (
-        <div className="w-1/4 flex-none bg-blue-500 p-4 hidden md:block">
-            Left
+export default function ProfileLeftComponent({currentUser}) {
+    return ( 
+        <div className="w-64 flex-none hidden md:block">
+            <div className="w-full">
+                <SideBar currentUser={currentUser} />
+            </div>
         </div>
-
-    )
+    );
 }

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 
 export default function Post({ posts }) {
-    const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg p-4 w-full px-10 min-h-[120px] h-auto my-4"; 
+    const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg p-4 w-full min-h-[120px] h-auto"; 
 
     let navigate = useNavigate();
 
@@ -12,21 +12,21 @@ export default function Post({ posts }) {
     }
 
     return (
-        <div className="max-w-3xl mx-auto w-full px-6 z-[-1]">
+        <div className="w-full my-6 max-w-4xl mx-auto">
             <div className={outerCardClass}>
                 {/* Name and Timestamp aligned properly */}
-                <div className="text-gray-500 text-sm flex flex-col">
-                <span 
+                <div className="text-gray-500 text-sm flex flex-col px-2">
+                    <span 
                         className="font-semibold cursor-pointer text-gray-700 cursor-pointer hover:text-blue-500 hover:underline"
                         onClick={() => goToRoute('/profile')}
-                >
+                    >
                         {posts.userName}
-                </span>
+                    </span>
                     <span className="text-xs">{posts.timeStamp}</span>
                 </div>
 
                 {/* Status content */}
-                <div className="w-full mt-4 break-words whitespace-normal text-gray-800">
+                <div className="w-full mt-4 px-2 break-words whitespace-normal text-gray-800">
                     {posts.status}
                 </div>
             </div>

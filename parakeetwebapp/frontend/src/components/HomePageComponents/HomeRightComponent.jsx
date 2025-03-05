@@ -3,7 +3,7 @@ import NotificationsCardHomePage from "./HomePageNotificationsCard/Notifications
 
 export default function HomeRightComponent() {
     return (
-        <div className="w-1/4 flex-none p-4 hidden md:block pl-0">
+        <div className="w-1/3 flex-none p-4 hidden md:block pl-0">
             <NotificationsCardHomePage/>
         </div>
 

@@ -9,7 +9,7 @@ export default function ProfileCenterComponent({currentUser}) {
         console.log("Current user", currentUser);
     }
     return (
-        <div className="flex-1 p-4 bg-[#f4f2ee] min-w-[900px]">
+        <div className="flex-1 p-4 mx-16 bg-[#f4f2ee] min-w-[900px]">
             { isEditing ? (<ProfileCardEdit currentUser={currentUser} onEdit={onEdit}/>) : (<ProfileCard currentUser={currentUser} onEdit={onEdit}/>)}
         </div>
     )
