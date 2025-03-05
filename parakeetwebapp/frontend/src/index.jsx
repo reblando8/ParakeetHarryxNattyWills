@@ -8,7 +8,6 @@ import {router } from './Routes/route.jsx';
 import {app} from './firebaseConfig.js'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'
-console.log("hello");
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 

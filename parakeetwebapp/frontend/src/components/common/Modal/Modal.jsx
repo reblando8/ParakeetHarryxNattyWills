@@ -4,7 +4,6 @@ import { Modal, Button } from 'antd';
 const ModalComponent = ({ modalOpen, setModalOpen, sendStatus, setStatus, status }) => {
 
   const handlePost = () => {
-    console.log('User Post:', status);
     setStatus(''); // Clear input after submission
     setModalOpen(false); // Close modal
   };

@@ -6,7 +6,6 @@ export default function ProfileCenterComponent({currentUser}) {
     const [isEditing, setIsEditing] = useState(false);
     const onEdit = () => {
         setIsEditing(!isEditing);
-        console.log("Current user", currentUser);
     }
     return (
         <div className="flex-1 p-4 mx-16 bg-[#f4f2ee] min-w-[900px]">

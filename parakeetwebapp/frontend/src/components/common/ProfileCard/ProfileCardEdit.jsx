@@ -22,7 +22,6 @@ export default function ProfileCard({ currentUser, onEdit }) {
         email: currentUser?.user?.email || currentUser?.email || "",
         updatedAt: new Date().toISOString()
     });
-    console.log("Form data", formData);
     
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -30,7 +29,6 @@ export default function ProfileCard({ currentUser, onEdit }) {
             ...prev,
             [name]: value
         }));
-        console.log("Updated formData field:", name, value);
     };
 
 
