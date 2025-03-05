@@ -3,6 +3,7 @@ import logo from '../../images/ParakeetLogo.png';
 import { AiFillHome, AiOutlineSearch } from "react-icons/ai";
 import { BsPeopleFill, BsChatDotsFill, BsBellFill } from "react-icons/bs";
 import { RiUserSearchFill } from "react-icons/ri";
+import { MdTask, MdSchedule } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 
 export default function SideBar({ currentUser }) {
@@ -136,6 +137,30 @@ export default function SideBar({ currentUser }) {
                     >
                         <RiUserSearchFill className="w-6 h-6" />
                         <span className="font-medium">Personalized Picks</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Manage Section */}
+            <div className="px-6 mt-8">
+                <h2 className="text-gray-500 font-semibold text-sm mb-4 uppercase tracking-wider">
+                    Manage
+                </h2>
+                <div className="space-y-4">
+                    <div 
+                        className="flex items-center space-x-3 text-gray-600 hover:text-black cursor-pointer p-2 rounded-lg hover:bg-gray-100"
+                        onClick={() => goToRoute('/tasks')}
+                    >
+                        <MdTask className="w-6 h-6" />
+                        <span className="font-medium">Tasks</span>
+                    </div>
+
+                    <div 
+                        className="flex items-center space-x-3 text-gray-600 hover:text-black cursor-pointer p-2 rounded-lg hover:bg-gray-100"
+                        onClick={() => goToRoute('/schedule')}
+                    >
+                        <MdSchedule className="w-6 h-6" />
+                        <span className="font-medium">Schedule</span>
                     </div>
                 </div>
             </div>
