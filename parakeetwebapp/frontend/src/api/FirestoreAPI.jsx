@@ -62,7 +62,7 @@ export const updateUserData = (userID, payload) => {
 };
 
 export const getSingleStatus = (setAllStatus, id) => {
-    const singleUserQuery = query(usersRef, where("userID", "==", id));
+    const singleUserQuery = query(postsRef, where("userID", "==", id));
     onSnapshot(singleUserQuery, (response) => {
         setAllStatus(response.docs.map((doc) => {
             return {

@@ -14,8 +14,19 @@ export default function PostStatus({ currentUser }) {
     const [allStatus, setAllStatus] = useState([]);
     const navigate = useNavigate();
 
+    const goToRoute = (route, state) => {
+        navigate(route, state);
+    }   
+
     const goToProfile = () => {
-        navigate('/profile');
+        goToRoute('/profile',
+            {
+                state: {
+                    id: currentUser?.userID, 
+                    email: currentUser?.email
+                }
+            }
+        )
     };
 
     const sendStatus = async () =>{

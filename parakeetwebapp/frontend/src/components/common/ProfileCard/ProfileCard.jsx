@@ -18,18 +18,23 @@ export default function ProfileCard({ currentUser, onEdit }) {
         }
     }, []);
     console.log("location", location);
-
+    console.log("allStatus", allStatus);
     console.log("currentProfile", currentProfile);
 
     // Determine which data source to use
     const profileData = Object.keys(currentProfile).length === 0 ? currentUser : currentProfile;
+    
+    // Check if this is the current user's profile by comparing emails
+    const isCurrentUserProfile = profileData?.email === localStorage.getItem('userEmail');
 
     return (
         <>
             <div className="relative bg-white border border-gray-300 shadow-md rounded-lg p-8 w-full mb-16">
-                <button onClick={onEdit} className="absolute top-2 right-2 bg-purple-500 text-white px-2 py-1 rounded text-xs font-bold cursor-pointer hover:bg-purple-600">
-                    Edit
-                </button>
+                {isCurrentUserProfile && (
+                    <button onClick={onEdit} className="absolute top-2 right-2 bg-purple-500 text-white px-2 py-1 rounded text-xs font-bold cursor-pointer hover:bg-purple-600">
+                        Edit
+                    </button>
+                )}
 
                 {/* Header Section - Profile Picture, Name, and Basic Info */}
                 <div className="flex items-start space-x-4 mb-8">
@@ -122,7 +127,7 @@ export default function ProfileCard({ currentUser, onEdit }) {
 
             <div className="w-full">
                 {allStatus.filter((item) => {
-                    return item.email === localStorage.getItem('userEmail');
+                    return item.email === profileData.email;
                 }).map((posts)=> {
                     return <Post posts={posts} key={posts.id}/>
                 })}

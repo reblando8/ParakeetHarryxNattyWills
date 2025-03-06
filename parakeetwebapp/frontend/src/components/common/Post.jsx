@@ -26,7 +26,7 @@ export default function Post({ posts, key }) {
                                         email: posts?.email
                                     }
                                 }
-                             )}
+                        )}
                     >
                         {posts.userName}
                     </span>
