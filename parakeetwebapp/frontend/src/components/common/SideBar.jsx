@@ -4,7 +4,10 @@ import { AiFillHome, AiOutlineSearch } from "react-icons/ai";
 import { BsPeopleFill, BsChatDotsFill, BsBellFill } from "react-icons/bs";
 import { RiUserSearchFill } from "react-icons/ri";
 import { MdTask, MdSchedule } from "react-icons/md";
+import { FiLogOut } from "react-icons/fi";
 import { useNavigate } from 'react-router-dom';
+import { LogoutAPI } from "../../api/authAPI.jsx";
+import { toast } from "react-toastify";
 
 export default function SideBar({ currentUser }) {
     let navigate = useNavigate();
@@ -22,6 +25,17 @@ export default function SideBar({ currentUser }) {
     const handleSearchBlur = () => {
         // Delay closing to allow clicking on results
         setTimeout(() => setIsSearchOpen(false), 200);
+    };
+
+    const logout = async () => {
+        try {
+            await LogoutAPI();
+            toast.success("Logged Out Successfully!");
+            navigate('/login');
+        } catch (error) {
+            console.error("Logout failed:", error);
+            toast.error("Failed to Logout. Try Again!");
+        }
     };
 
     return (
@@ -163,6 +177,17 @@ export default function SideBar({ currentUser }) {
                         <span className="font-medium">Schedule</span>
                     </div>
                 </div>
+            </div>
+
+            {/* Logout Button */}
+            <div className="mt-auto px-6">
+                <button 
+                    className="flex items-center space-x-3 text-red-600 hover:text-red-700 cursor-pointer p-2 rounded-lg hover:bg-red-50 w-full"
+                    onClick={logout}
+                >
+                    <FiLogOut className="w-6 h-6" />
+                    <span className="font-medium">Logout</span>
+                </button>
             </div>
         </div>
     );

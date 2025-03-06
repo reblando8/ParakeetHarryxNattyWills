@@ -22,9 +22,10 @@ export default function PostStatus({ currentUser }) {
         let post = {
             status: status,
             timeStamp: getCurrentTimeStamp("LLL"),
-            userEmail: currentUser.email,
+            email: currentUser.email,
             userName: currentUser.name,
             postID: getUniqueID(),
+            userID: currentUser.userID
         }
         await postStatus(post);
         await setModalOpen(false);
