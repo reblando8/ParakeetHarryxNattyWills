@@ -3,6 +3,7 @@ import Post from "../Post";
 import { useState, useMemo} from "react";
 import { getSingleStatus, getSingleUser } from "../../../api/FirestoreAPI";
 import { useLocation } from "react-router-dom";
+import AboutMe from "../AboutMe/AboutMe";
 
 export default function ProfileCard({ currentUser, onEdit }) {
     let location = useLocation();
@@ -29,7 +30,7 @@ export default function ProfileCard({ currentUser, onEdit }) {
 
     return (
         <>
-            <div className="relative bg-white border border-gray-300 shadow-md rounded-lg p-8 w-full mb-16">
+            <div className="relative bg-white border border-gray-300 shadow-md rounded-lg p-8 w-full mt-8">
                 {isCurrentUserProfile && (
                     <button onClick={onEdit} className="absolute top-2 right-2 bg-purple-500 text-white px-2 py-1 rounded text-xs font-bold cursor-pointer hover:bg-purple-600">
                         Edit
@@ -124,7 +125,7 @@ export default function ProfileCard({ currentUser, onEdit }) {
                     </div>
                 </div>
             </div>
-
+            {(profileData.aboutMe || profileData.skills) && <AboutMe profileData={profileData} />}
             <div className="w-full">
                 {allStatus.filter((item) => {
                     return item.email === profileData.email;

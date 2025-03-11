@@ -5,6 +5,7 @@ import { BsPeopleFill, BsChatDotsFill, BsBellFill } from "react-icons/bs";
 import { RiUserSearchFill } from "react-icons/ri";
 import { MdTask, MdSchedule } from "react-icons/md";
 import { FiLogOut } from "react-icons/fi";
+import { CgProfile } from "react-icons/cg";
 import { useNavigate } from 'react-router-dom';
 import { LogoutAPI } from "../../api/authAPI.jsx";
 import { toast } from "react-toastify";
@@ -17,6 +18,21 @@ export default function SideBar({ currentUser }) {
     const goToRoute = (route) => {
         navigate(route);
     }
+
+    const goToProfileRoute = (route,state) => {
+        navigate(route,state);
+    }
+
+    const goToProfile = () => {
+        goToProfileRoute('/profile',
+            {
+                state: {
+                    id: currentUser?.userID, 
+                    email: currentUser?.email
+                }
+            }
+        )
+    };
 
     const handleSearchFocus = () => {
         setIsSearchOpen(true);
@@ -161,6 +177,14 @@ export default function SideBar({ currentUser }) {
                     Manage
                 </h2>
                 <div className="space-y-4">
+                    <div 
+                        className="flex items-center space-x-3 text-gray-600 hover:text-black cursor-pointer p-2 rounded-lg hover:bg-gray-100"
+                        onClick={goToProfile}
+                    >
+                        <CgProfile className="w-6 h-6" />
+                        <span className="font-medium">Profile</span>
+                    </div>
+
                     <div 
                         className="flex items-center space-x-3 text-gray-600 hover:text-black cursor-pointer p-2 rounded-lg hover:bg-gray-100"
                         onClick={() => goToRoute('/tasks')}

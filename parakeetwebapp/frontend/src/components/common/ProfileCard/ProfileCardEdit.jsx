@@ -7,6 +7,7 @@ export default function ProfileCard({ currentUser, onEdit }) {
 
     const [formData, setFormData] = useState({
         name: currentUser?.name || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || "",
+        aboutMe: currentUser?.aboutMe || "",
         sport: currentUser?.sport || "",
         position: currentUser?.position || "",
         team: currentUser?.team || "",
@@ -59,6 +60,19 @@ export default function ProfileCard({ currentUser, onEdit }) {
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                             placeholder="e.g., John Smith"
+                        />
+                    </div>
+
+                    {/* About Me Section */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">About Me</label>
+                        <textarea
+                            name="aboutMe"
+                            value={formData.aboutMe}
+                            onChange={handleChange}
+                            rows="4"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Share a brief bio about yourself, your journey in sports, and what motivates you..."
                         />
                     </div>
 
