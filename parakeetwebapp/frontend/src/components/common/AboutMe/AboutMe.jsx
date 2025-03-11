@@ -5,7 +5,7 @@ export default function AboutMe({ profileData }) {
     if (!profileData.aboutMe && !profileData.skills) return null;
 
     return (
-        <div className="bg-white border border-gray-300 shadow-md rounded-lg p-8 w-full mt-8">
+        <div className="bg-white border border-gray-300 shadow-md rounded-lg p-8 w-full mb-8 mt-8">
             {/* About Me Section */}
             {profileData.aboutMe && (
                 <div className="mb-8">
