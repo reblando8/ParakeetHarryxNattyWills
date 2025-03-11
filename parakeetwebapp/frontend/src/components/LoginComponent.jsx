@@ -40,7 +40,8 @@ export default function LoginComponent() {
             <img 
                 src={logo} // Path to your logo file
                 alt="Logo"
-                className="absolute top-10 left-10 h-100 w-100" // Positioned at the top-left
+                className="absolute top-10 left-10 h-100 w-100 cursor-pointer" // Positioned at the top-left
+                onClick={() => navigate('/')}
             />
             <div className="flex flex-col items-center justify-center h-screen space-y-7">
                 {/* LOGIN CONTAINER */}
