@@ -1,9 +1,11 @@
 import {firestore, auth} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot, doc, updateDoc, query, where} from 'firebase/firestore'
+import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc} from 'firebase/firestore'
 import { toast } from 'react-toastify';
 
 let postsRef = collection(firestore, 'posts');
 let usersRef = collection(firestore, 'users');
+let likesRef = collection(firestore, 'likes');
+
 export const postStatus = (post) => {
     addDoc(postsRef, post)
     .then(() => {
@@ -41,7 +43,7 @@ export const getCurrentUserData = (setCurrentUser) => {
     onSnapshot(usersRef, (response) => {
         setCurrentUser(response.docs
             .map((docs) => {
-                return { ...docs.data(), userID: docs.id};
+                return { ...docs.data(), id: docs.id};
             })
             .filter((user) => {
                 return user.email === localStorage.getItem("userEmail");
@@ -86,3 +88,48 @@ export const getSingleUser = (setCurrentUser, email) => {
     );
     });
 };
+
+export const likePost = async (userID, postID) => {
+    try {
+        const docID = `${userID}_${postID}`;  // Unique ID format
+        const docToLike = doc(likesRef, docID);
+
+        const docSnap = await getDoc(docToLike);
+
+        if (docSnap.exists()) {
+            // If the like already exists, remove it (unlike)
+            await deleteDoc(docToLike);
+        } else {
+            // If the like does not exist, add it
+            await setDoc(docToLike, { userID, postID });
+        }
+    } catch (error) {
+        console.error("Error liking post:", error);
+    }
+};
+
+export const getLikesByPost = (setLikeCount, postID) => {
+    try {
+        let likeQuery = query(likesRef, where('postID', '==', postID));
+
+        onSnapshot(likeQuery, (response) => {
+            const likeCount = response.docs.length;
+            setLikeCount(likeCount);
+        });
+    } catch(error) {
+        console.error("Error getting likes:", error);
+    }
+}
+
+export const checkIfUserLikedPost = (setIsLiked, userID, postID) => {
+    try {
+        const docID = `${userID}_${postID}`;
+        const likeDoc = doc(likesRef, docID);
+
+        onSnapshot(likeDoc, (doc) => {
+            setIsLiked(doc.exists());
+        });
+    } catch(error) {
+        console.error("Error checking like status:", error);
+    }
+}

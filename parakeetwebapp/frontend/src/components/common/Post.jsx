@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import LikeButton from './LikeButton/LikeButton';
+import { getCurrentUserData } from '../../api/FirestoreAPI';
 
 export default function Post({ posts, key }) {
     const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg p-4 w-full min-h-[120px] h-auto"; 
 
     let navigate = useNavigate();
+    const [currentUser, setCurrentUser] = useState({});
+    useMemo(() => {
+        getCurrentUserData(setCurrentUser);
+    }, []);
 
     const goToRoute = (route, state) => {
         navigate(route, state);
@@ -37,6 +42,14 @@ export default function Post({ posts, key }) {
                 <div className="w-full mt-4 px-2 break-words whitespace-normal text-gray-800">
                     {posts.status}
                 </div>
+
+                <div className="w-full mt-4 px-2 break-words whitespace-normal text-gray-800">
+                    <LikeButton
+                        userID={currentUser?.id}
+                        postID={posts.id}
+                    />
+                </div>
+                
             </div>
         </div>
     );
