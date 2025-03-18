@@ -30,33 +30,38 @@ export default function LikeButton({
   };
 
   const sizeClasses = {
-    small: 'text-sm',
-    medium: 'text-base',
-    large: 'text-lg'
+    small: 'text-xs',
+    medium: 'text-sm',
+    large: 'text-base'
   };
 
   const iconSizes = {
-    small: 16,
-    medium: 20,
-    large: 24
+    small: 12,
+    medium: 16,
+    large: 20
   };
 
   return (
-    <motion.button
+    <button
       onClick={handleClick}
-      className={`flex items-center gap-2 ${sizeClasses[size]} ${className}`}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      className={`inline-flex items-center gap-2 ${sizeClasses[size]} ${className} transition-all duration-200 ease-in-out`}
     >
-      <div className="relative">
-        <AnimatePresence mode="wait">
+      <motion.div 
+        className="relative w-[20px] h-[20px] flex items-center justify-center"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
           {isActive ? (
             <motion.div
               key="filled"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ 
+                duration: 0.2,
+                ease: "easeOut"
+              }}
             >
               <FaHeart 
                 className="text-red-500" 
@@ -66,22 +71,25 @@ export default function LikeButton({
           ) : (
             <motion.div
               key="outline"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ 
+                duration: 0.2,
+                ease: "easeOut"
+              }}
             >
               <FaRegHeart 
-                className="text-gray-400 hover:text-red-500 transition-colors" 
+                className="text-gray-400 transition-colors duration-200" 
                 size={iconSizes[size]}
               />
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-      <span className={`${isActive ? 'text-red-500' : 'text-gray-400'}`}>
+      </motion.div>
+      <span className={`${isActive ? 'text-red-500' : 'text-gray-400'} transition-colors duration-200`}>
         {likes}
       </span>
-    </motion.button>
+    </button>
   );
 }

@@ -2,9 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LikeButton from './LikeButton/LikeButton';
 import { getCurrentUserData } from '../../api/FirestoreAPI';
+import { FaRegComment, FaRetweet, FaRegPaperPlane } from 'react-icons/fa';
 
 export default function Post({ posts, key }) {
-    const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg p-4 w-full min-h-[120px] h-auto"; 
+    const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg pb-0 pt-4 px-4 w-full min-h-[120px] h-auto"; 
 
     let navigate = useNavigate();
     const [currentUser, setCurrentUser] = useState({});
@@ -15,6 +16,21 @@ export default function Post({ posts, key }) {
     const goToRoute = (route, state) => {
         navigate(route, state);
     }
+
+    const handleComment = () => {
+        // TODO: Implement comment functionality
+        console.log('Comment clicked');
+    };
+
+    const handleRepost = () => {
+        // TODO: Implement repost functionality
+        console.log('Repost clicked');
+    };
+
+    const handleSend = () => {
+        // TODO: Implement send functionality
+        console.log('Send clicked');
+    };
 
     return (
         <div className="w-full my-6 max-w-4xl mx-auto" key = {key}>
@@ -43,13 +59,37 @@ export default function Post({ posts, key }) {
                     {posts.status}
                 </div>
 
-                <div className="w-full mt-4 px-2 break-words whitespace-normal text-gray-800">
+                {/* Divider */}
+                <div className="w-full h-[1px] bg-gray-200 mt-3 mb-2"></div>
+
+                {/* Interaction Row */}
+                <div className="flex justify-center items-center px-2 mb-1 gap-20">
                     <LikeButton
                         userID={currentUser?.id}
                         postID={posts.id}
                     />
+                    <button 
+                        onClick={handleComment}
+                        className="flex items-center gap-1 text-gray-500 hover:text-blue-500"
+                    >
+                        <FaRegComment size={16} />
+                        <span className="text-sm">Comment</span>
+                    </button>
+                    <button 
+                        onClick={handleRepost}
+                        className="flex items-center gap-1 text-gray-500 hover:text-green-500"
+                    >
+                        <FaRetweet size={16} />
+                        <span className="text-sm">Repost</span>
+                    </button>
+                    <button 
+                        onClick={handleSend}
+                        className="flex items-center gap-1 text-gray-500 hover:text-blue-500"
+                    >
+                        <FaRegPaperPlane size={16} />
+                        <span className="text-sm">Send</span>
+                    </button>
                 </div>
-                
             </div>
         </div>
     );
