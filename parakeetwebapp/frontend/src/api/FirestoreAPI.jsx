@@ -1,20 +1,43 @@
-import {firestore, auth} from '../firebaseConfig'
+import {firestore, auth, storage} from '../firebaseConfig'
 import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy} from 'firebase/firestore'
+import { ref, uploadBytesResumable, getDownloadURL, uploadBytes} from "firebase/storage";
 import { toast } from 'react-toastify';
+import { getUniqueID } from "../Helpers/getUniqueID";
+import { getCurrentTimeStamp } from "../Helpers/UseMoment";
 
 let postsRef = collection(firestore, 'posts');
 let usersRef = collection(firestore, 'users');
 let likesRef = collection(firestore, 'likes');
 
-export const postStatus = (post) => {
-    addDoc(postsRef, post)
-    .then(() => {
-        toast.success("You Successfully posted!")
-    })
-    .catch((error) => {
-        console.log(error)
-    })
-}
+export const postStatus = async (status, email, userName, userID, file) => {
+    try {
+        let imageURL = "";
+
+        // Upload image if file is provided
+        if (file) {
+            const storageRef = ref(storage, `posts/${userID}/${getUniqueID()}-${file.name}`);
+            await uploadBytes(storageRef, file);
+            imageURL = await getDownloadURL(storageRef);
+        }
+
+        const post = {
+            status: status,
+            timeStamp: getCurrentTimeStamp("LLL"),
+            email: email,
+            userName: userName,
+            postID: getUniqueID(),
+            userID: userID,
+            imageURL: imageURL // Store image URL if uploaded
+        };
+
+        await addDoc(postsRef, post);
+        toast.success("You Successfully posted!");
+    } catch (error) {
+        console.log(error);
+        toast.error("Failed to post!");
+    }
+};
+
 
 
 
@@ -164,3 +187,37 @@ export const listenForComments = (postID, setComments) => {
         setComments(comments);
     });
 };
+
+export const createPost = async (userID, userName, status, file) => {
+    try {
+        let imageUrl = null;
+        
+        // Upload image if a file is selected
+        if (file) {
+            const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+            
+            // Wait for upload to complete
+            await new Promise((resolve, reject) => {
+                uploadTask.on("state_changed", null, reject, async () => {
+                    imageUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                    resolve();
+                });
+            });
+        }
+
+        // Add post data to Firestore
+        await addDoc(collection(firestore, "posts"), {
+            userID,
+            userName,
+            status,
+            imageUrl, // Image URL (null if no file uploaded)
+            timeStamp: serverTimestamp(),
+        });
+
+        console.log("Post created successfully!");
+    } catch (error) {
+        console.error("Error creating post:", error);
+    }
+};
+

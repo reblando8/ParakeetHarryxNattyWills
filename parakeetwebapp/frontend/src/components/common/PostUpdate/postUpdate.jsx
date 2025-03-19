@@ -30,15 +30,7 @@ export default function PostStatus({ currentUser }) {
     };
 
     const sendStatus = async () =>{
-        let post = {
-            status: status,
-            timeStamp: getCurrentTimeStamp("LLL"),
-            email: currentUser.email,
-            userName: currentUser.name,
-            postID: getUniqueID(),
-            userID: currentUser.userID
-        }
-        await postStatus(post);
+        await postStatus(status, currentUser.email, currentUser.name, currentUser.id);
         await setModalOpen(false);
         await setStatus("");
     }
