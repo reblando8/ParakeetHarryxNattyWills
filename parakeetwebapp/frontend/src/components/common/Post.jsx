@@ -3,11 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import LikeButton from './LikeButton/LikeButton';
 import { getCurrentUserData } from '../../api/FirestoreAPI';
 import { FaRegComment, FaRetweet, FaRegPaperPlane } from 'react-icons/fa';
+import CommentDropDown from './Comments/CommentDropDown';
 
 export default function Post({ posts, key }) {
     const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg pb-0 pt-4 px-4 w-full min-h-[120px] h-auto"; 
-
     let navigate = useNavigate();
+
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleToggleDropdown = () => {
+        setIsOpen(!isOpen);
+    };
+
     const [currentUser, setCurrentUser] = useState({});
     useMemo(() => {
         getCurrentUserData(setCurrentUser);
@@ -15,11 +22,6 @@ export default function Post({ posts, key }) {
 
     const goToRoute = (route, state) => {
         navigate(route, state);
-    }
-
-    const handleComment = () => {
-        // TODO: Implement comment functionality
-        console.log('Comment clicked');
     };
 
     const handleRepost = () => {
@@ -33,21 +35,20 @@ export default function Post({ posts, key }) {
     };
 
     return (
-        <div className="w-full my-6 max-w-4xl mx-auto" key = {key}>
+        <div className="w-full my-6 max-w-4xl mx-auto" key={key}>
             <div className={outerCardClass}>
                 {/* Name and Timestamp aligned properly */}
                 <div className="text-gray-500 text-sm flex flex-col px-2">
                     <span 
                         className="font-semibold cursor-pointer text-gray-700 underline hover:text-blue-500"
                         onClick={() =>
-                             goToRoute('/profile',
-                                {
-                                    state: {
-                                        id: posts?.userID, 
-                                        email: posts?.email
-                                    }
+                            goToRoute('/profile', {
+                                state: {
+                                    id: posts?.userID, 
+                                    email: posts?.email
                                 }
-                        )}
+                            })
+                        }
                     >
                         {posts.userName}
                     </span>
@@ -64,25 +65,27 @@ export default function Post({ posts, key }) {
 
                 {/* Interaction Row */}
                 <div className="flex justify-center items-center px-2 mb-1 gap-20">
-                    <LikeButton
-                        userID={currentUser?.id}
-                        postID={posts.id}
-                    />
-                    <button 
-                        onClick={handleComment}
+                    <div 
+                        onClick={handleToggleDropdown}
+                    >
+                        <LikeButton userID={currentUser?.id} postID={posts.id} onClick={[handleToggleDropdown, () => console.log("should change")]} />
+                    </div>
+                    <button
+                        onClick={handleToggleDropdown}
                         className="flex items-center gap-1 text-gray-500 hover:text-blue-500"
                     >
-                        <FaRegComment size={16} />
+                        <FaRegComment size={16} /> {/* Replaced SVG with FaRegComment */}
                         <span className="text-sm">Comment</span>
                     </button>
-                    <button 
+
+                    <button
                         onClick={handleRepost}
                         className="flex items-center gap-1 text-gray-500 hover:text-green-500"
                     >
                         <FaRetweet size={16} />
                         <span className="text-sm">Repost</span>
                     </button>
-                    <button 
+                    <button
                         onClick={handleSend}
                         className="flex items-center gap-1 text-gray-500 hover:text-blue-500"
                     >
@@ -90,8 +93,17 @@ export default function Post({ posts, key }) {
                         <span className="text-sm">Send</span>
                     </button>
                 </div>
+
+                {/* Comment Section */} 
+                {isOpen && (
+                    <CommentDropDown 
+                        isOpen={isOpen} 
+                        postID={posts.id} 
+                        userID={currentUser?.id} 
+                        userName={currentUser?.name} 
+                    />
+                )}
             </div>
         </div>
     );
 }
-

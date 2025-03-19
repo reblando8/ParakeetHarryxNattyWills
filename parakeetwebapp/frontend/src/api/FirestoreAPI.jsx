@@ -1,5 +1,5 @@
 import {firestore, auth} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc} from 'firebase/firestore'
+import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy} from 'firebase/firestore'
 import { toast } from 'react-toastify';
 
 let postsRef = collection(firestore, 'posts');
@@ -133,3 +133,34 @@ export const checkIfUserLikedPost = (setIsLiked, userID, postID) => {
         console.error("Error checking like status:", error);
     }
 }
+
+export const addComment = async (postID, userID, userName, text) => {
+    try {
+        await addDoc(collection(firestore, `posts/${postID}/comments`), {
+            userID,
+            userName,
+            text,
+            timeStamp: serverTimestamp(),
+        });
+        console.log("Comment added!");
+    } catch (error) {
+        console.error("Error adding comment: ", error);
+    }
+};
+
+export const deleteComment = async (postID, commentID) => {
+    try {
+        await deleteDoc(doc(firestore, `posts/${postID}/comments/${commentID}`));
+        console.log("Comment deleted!");
+    } catch (error) {
+        console.error("Error deleting comment: ", error);
+    }
+};
+
+export const listenForComments = (postID, setComments) => {
+    const q = query(collection(firestore, `posts/${postID}/comments`), orderBy("timeStamp", "asc"));
+    return onSnapshot(q, (snapshot) => {
+        const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setComments(comments);
+    });
+};
