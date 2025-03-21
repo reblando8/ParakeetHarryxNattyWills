@@ -9,34 +9,37 @@ let postsRef = collection(firestore, 'posts');
 let usersRef = collection(firestore, 'users');
 let likesRef = collection(firestore, 'likes');
 
-export const postStatus = async (status, email, userName, userID, file) => {
+export const postStatus = async (status, email, userName, userID, files) => {
     try {
-        let imageURL = "";
-
-        // Upload image if file is provided
-        if (file) {
-            const storageRef = ref(storage, `posts/${userID}/${getUniqueID()}-${file.name}`);
-            await uploadBytes(storageRef, file);
-            imageURL = await getDownloadURL(storageRef);
+      const imageURLs = [];
+  
+      // Upload each file and collect its download URL
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const storageRef = ref(storage, `posts/${userID}/${getUniqueID()}-${file.name}`);
+          await uploadBytes(storageRef, file);
+          const url = await getDownloadURL(storageRef);
+          imageURLs.push(url);
         }
-
-        const post = {
-            status: status,
-            timeStamp: getCurrentTimeStamp("LLL"),
-            email: email,
-            userName: userName,
-            postID: getUniqueID(),
-            userID: userID,
-            imageURL: imageURL // Store image URL if uploaded
-        };
-
-        await addDoc(postsRef, post);
-        toast.success("You Successfully posted!");
+      }
+  
+      const post = {
+        status: status,
+        timeStamp: getCurrentTimeStamp("LLL"),
+        email: email,
+        userName: userName,
+        postID: getUniqueID(),
+        userID: userID,
+        imageURLs: imageURLs // Store array of image URLs
+      };
+  
+      await addDoc(postsRef, post);
+      toast.success("You successfully posted!");
     } catch (error) {
-        console.log(error);
-        toast.error("Failed to post!");
+      console.error(error);
+      toast.error("Failed to post!");
     }
-};
+  };
 
 
 
@@ -188,36 +191,45 @@ export const listenForComments = (postID, setComments) => {
     });
 };
 
-export const createPost = async (userID, userName, status, file) => {
+export const createPost = async (userID, userName, status, files) => {
     try {
-        let imageUrl = null;
-        
-        // Upload image if a file is selected
-        if (file) {
-            const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
-            const uploadTask = uploadBytesResumable(storageRef, file);
-            
-            // Wait for upload to complete
-            await new Promise((resolve, reject) => {
-                uploadTask.on("state_changed", null, reject, async () => {
-                    imageUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                    resolve();
-                });
-            });
+      let imageUrls = [];
+  
+      // Upload all files and collect URLs
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+  
+          const url = await new Promise((resolve, reject) => {
+            uploadTask.on(
+              "state_changed",
+              null,
+              reject,
+              async () => {
+                const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(downloadUrl);
+              }
+            );
+          });
+  
+          imageUrls.push(url);
         }
-
-        // Add post data to Firestore
-        await addDoc(collection(firestore, "posts"), {
-            userID,
-            userName,
-            status,
-            imageUrl, // Image URL (null if no file uploaded)
-            timeStamp: serverTimestamp(),
-        });
-
-        console.log("Post created successfully!");
+      }
+  
+      // Add post to Firestore
+      await addDoc(collection(firestore, "posts"), {
+        userID,
+        userName,
+        status,
+        imageUrls, // array of image URLs (may be empty)
+        timeStamp: serverTimestamp(),
+      });
+  
+      console.log("Post created successfully!");
     } catch (error) {
-        console.error("Error creating post:", error);
+      console.error("Error creating post:", error);
     }
-};
+  };
+  
 
