@@ -3,16 +3,17 @@ import { Modal, Button } from 'antd';
 import { AiOutlinePicture } from 'react-icons/ai';
 import { useDropzone } from 'react-dropzone';
 
-const ModalComponent = ({ modalOpen, setModalOpen, sendStatus, setStatus, status }) => {
-  const [selectedFiles, setSelectedFiles] = useState([]);
+const ModalComponent = ({ modalOpen, setModalOpen, sendStatus, setStatus, status, selectedFiles, setSelectedFiles }) => {
   const [previews, setPreviews] = useState([]);
 
   const handlePost = () => {
-    sendStatus(selectedFiles); // Pass array of image files
-    setStatus('');
-    setSelectedFiles([]);
+    
+    console.log(selectedFiles)
+    sendStatus(); //actually sending the data to be stored
     setPreviews([]);
     setModalOpen(false);
+    setStatus("");
+    setSelectedFiles([]);
   };
 
   const onDrop = useCallback((acceptedFiles) => {
@@ -20,6 +21,7 @@ const ModalComponent = ({ modalOpen, setModalOpen, sendStatus, setStatus, status
     const updatedFiles = [...selectedFiles, ...limitedFiles];
     const updatedPreviews = [...previews, ...limitedFiles.map(file => URL.createObjectURL(file))];
 
+    // Update selectedFiles and previews without using setSelectFiles
     setSelectedFiles(updatedFiles);
     setPreviews(updatedPreviews);
   }, [selectedFiles, previews]);

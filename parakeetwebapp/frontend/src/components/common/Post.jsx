@@ -4,12 +4,42 @@ import LikeButton from './LikeButton/LikeButton';
 import { getCurrentUserData } from '../../api/FirestoreAPI';
 import { FaRegComment, FaRetweet, FaRegPaperPlane } from 'react-icons/fa';
 import CommentDropDown from './Comments/CommentDropDown';
+import Slider from "react-slick";
+
+const NextArrow = ({ onClick }) => (
+    <div
+      onClick={onClick}
+      className="absolute right-4 top-1/2 transform -translate-y-1/2 z-50 bg-orange-500 hover:bg-orange-600 text-white w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"
+    >
+      ▶
+    </div>
+  );
+  
+  const PrevArrow = ({ onClick }) => (
+    <div
+      onClick={onClick}
+      className="absolute left-4 top-1/2 transform -translate-y-1/2 z-50 bg-orange-500 hover:bg-orange-600 text-white w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"
+    >
+      ◀
+    </div>
+  );
 
 export default function Post({ posts, key }) {
     const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg pb-0 pt-4 px-4 w-full min-h-[120px] h-auto"; 
     let navigate = useNavigate();
 
     const [isOpen, setIsOpen] = useState(false);
+
+    const sliderSettings = {
+        dots: true,
+        infinite: false,
+        speed: 500,
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: true,
+        nextArrow: <NextArrow />,
+        prevArrow: <PrevArrow />
+    };
 
     const handleToggleDropdown = () => {
         setIsOpen(!isOpen);
@@ -58,7 +88,33 @@ export default function Post({ posts, key }) {
                 {/* Status content */}
                 <div className="w-full mt-4 px-2 break-words whitespace-normal text-gray-800">
                     {posts.status}
+
                 </div>
+                
+
+        {posts.imageURLs?.length > 0 && (
+          <div className="w-full mt-3 relative">
+            {posts.imageURLs.length === 1 ? (
+              <img
+                src={posts.imageURLs[0]}
+                alt="Post"
+                className="w-full h-96 object-cover rounded-lg"
+              />
+            ) : (
+              <Slider {...sliderSettings}>
+                {posts.imageURLs.map((url, i) => (
+                  <div key={i}>
+                    <img
+                      src={url}
+                      alt={`Post image ${i}`}
+                      className="w-full h-96 object-cover rounded-lg"
+                    />
+                  </div>
+                ))}
+              </Slider>
+            )}
+          </div>
+        )}
 
                 {/* Divider */}
                 <div className="w-full h-[1px] bg-gray-200 mt-3 mb-2"></div>

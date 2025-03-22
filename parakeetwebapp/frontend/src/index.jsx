@@ -6,6 +6,8 @@ import './index.css'
 import {RouterProvider } from "react-router-dom";
 import {router } from './Routes/route.jsx';
 import {app} from './firebaseConfig.js'
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'
 

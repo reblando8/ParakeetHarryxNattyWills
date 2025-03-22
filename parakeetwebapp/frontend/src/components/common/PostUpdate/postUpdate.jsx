@@ -11,6 +11,7 @@ import logo from '../../../images/profile-user-svgrepo-com.svg';
 export default function PostStatus({ currentUser }) {
     const [modalOpen, setModalOpen] = useState(false);
     const [status, setStatus] = useState('')
+    const [selectedFiles, setSelectedFiles] = useState([]);
     const [allStatus, setAllStatus] = useState([]);
     const navigate = useNavigate();
 
@@ -29,10 +30,13 @@ export default function PostStatus({ currentUser }) {
         )
     };
 
+
+    // I potentially need to add stuff for previews for images or something
     const sendStatus = async () =>{
-        await postStatus(status, currentUser.email, currentUser.name, currentUser.id);
+        await postStatus(status, currentUser.email, currentUser.name, currentUser.id, selectedFiles);
         await setModalOpen(false);
         await setStatus("");
+        await setSelectedFiles([]);
     }
 
     useMemo(() => {
@@ -87,6 +91,8 @@ export default function PostStatus({ currentUser }) {
                 status={status}
                 setStatus={setStatus}
                 sendStatus={sendStatus}
+                selectedFiles={selectedFiles}
+                setSelectedFiles={setSelectedFiles}
             />
             <div className="w-full">
                 {allStatus.map((posts)=> {
