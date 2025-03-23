@@ -4,8 +4,13 @@ import Register from "../pages/Register"
 import HomeLayout from "../Layouts/HomeLayout";
 import ProfileLayout from "../Layouts/ProfileLayout";
 import InfoHomeLayout from "../Layouts/InfoHomeLayout";
+import Tasks from "../pages/Tasks";
 
 export const router = createBrowserRouter([
+    {
+        path: "/tasks",
+        element: < Tasks/>
+    },
     {
         path: "/login",
         element: < Login />     
@@ -26,6 +31,7 @@ export const router = createBrowserRouter([
     {
         path: "/",
         element: < InfoHomeLayout />
-    }
+    },
+    
 
 ]);
