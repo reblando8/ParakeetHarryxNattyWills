@@ -1,5 +1,5 @@
 import React, {useEffect, useState, useMemo} from 'react';
-import HomeComponent from '../components/HomePageComponents/HomeComponent.jsx'
+import TasksComponent from '../components/HomePageComponents/TasksComponent.jsx'
 import { onAuthStateChanged } from 'firebase/auth';
 import {auth} from "../firebaseConfig.js"
 import { useNavigate } from "react-router-dom";
@@ -7,7 +7,7 @@ import Loader from "../components/common/Loader.jsx"
 import { getCurrentUserData } from '../api/FirestoreAPI.jsx';
 
 
-export default function Home({currentUser}) {
+export default function Tasks({currentUser}) {
     useMemo(() => {
         getCurrentUserData()
     }, [])
@@ -22,5 +22,5 @@ export default function Home({currentUser}) {
             }
         });
     }, []);
-    return loading ? <Loader/> : <HomeComponent currentUser={currentUser} />
+    return loading ? <Loader/> : <TasksComponent currentUser={currentUser} />
 }
