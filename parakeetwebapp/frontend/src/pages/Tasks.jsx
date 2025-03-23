@@ -1,5 +1,5 @@
 import React, {useEffect, useState, useMemo} from 'react';
-import TasksComponent from '../components/HomePageComponents/TasksComponent.jsx'
+import TasksComponent from '../components/TasksPageComponents/TasksComponent.jsx'
 import { onAuthStateChanged } from 'firebase/auth';
 import {auth} from "../firebaseConfig.js"
 import { useNavigate } from "react-router-dom";
