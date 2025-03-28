@@ -5,6 +5,7 @@ import HomeLayout from "../Layouts/HomeLayout";
 import ProfileLayout from "../Layouts/ProfileLayout";
 import InfoHomeLayout from "../Layouts/InfoHomeLayout";
 import Tasks from "../pages/Tasks";
+import SearchLayout from "../Layouts/SearchLayout"; 
 
 export const router = createBrowserRouter([
     {
@@ -23,7 +24,10 @@ export const router = createBrowserRouter([
         path: "/home",
         element: < HomeLayout />     
     },
-
+    {
+        path: "/search",
+        element: < SearchLayout />     
+    },
     {
         path: "/profile",
         element: < ProfileLayout />

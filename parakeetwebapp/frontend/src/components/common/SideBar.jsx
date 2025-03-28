@@ -90,7 +90,7 @@ export default function SideBar({ currentUser }) {
                     
                     <div 
                         className="flex items-center space-x-3 text-gray-600 hover:text-black cursor-pointer p-2 rounded-lg hover:bg-gray-100"
-                        onClick={() => goToRoute('/tasks')}
+                        onClick={() => goToRoute('/search')}
                     >
                         <AiOutlineSearch className="w-6 h-6" />
                         <span className="font-medium">Search</span>
