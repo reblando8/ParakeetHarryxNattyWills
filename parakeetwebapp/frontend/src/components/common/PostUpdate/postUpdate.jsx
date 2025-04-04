@@ -1,18 +1,20 @@
-import { useState, useMemo} from "react";
-import { FaRegImage, FaVideo, FaPen } from "react-icons/fa"; // Import icons
-import ModalComponent from "../Modal/Modal"
-import { postStatus, getStatus} from "../../../api/FirestoreAPI";
-import Post from "../Post"
-import { getUniqueID } from "../../../Helpers/getUniqueID";
-import { getCurrentTimeStamp } from "../../../Helpers/UseMoment";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from 'react-redux';
+import { FaRegImage, FaVideo, FaPen } from "react-icons/fa";
+import ModalComponent from "../Modal/Modal";
+import Post from "../Post";
 import { useNavigate } from "react-router-dom";
 import logo from '../../../images/profile-user-svgrepo-com.svg';
+import { createPost, setPosts } from '../../../redux/slices/postsSlice';
+import { getStatus } from '../../../api/FirestoreAPI';
 
-export default function PostStatus({ currentUser }) {
+export default function PostStatus() {
+    const dispatch = useDispatch();
+    const { posts } = useSelector((state) => state.posts);
+    const { user } = useSelector((state) => state.auth);
     const [modalOpen, setModalOpen] = useState(false);
-    const [status, setStatus] = useState('')
+    const [status, setStatus] = useState('');
     const [selectedFiles, setSelectedFiles] = useState([]);
-    const [allStatus, setAllStatus] = useState([]);
     const navigate = useNavigate();
 
     const goToRoute = (route, state) => {
@@ -23,25 +25,31 @@ export default function PostStatus({ currentUser }) {
         goToRoute('/profile',
             {
                 state: {
-                    id: currentUser?.userID, 
-                    email: currentUser?.email
+                    id: user?.uid, 
+                    email: user?.email
                 }
             }
         )
     };
 
 
-    // I potentially need to add stuff for previews for images or something
-    const sendStatus = async () =>{
-        await postStatus(status, currentUser.email, currentUser.name, currentUser.id, selectedFiles);
-        await setModalOpen(false);
-        await setStatus("");
-        await setSelectedFiles([]);
-    }
+    const sendStatus = () => {
+        if (!status || !user) return;
+        dispatch(createPost({
+            status, 
+            email: user.email,
+            userName: user.displayName,
+            userID: user.uid,
+            files: selectedFiles
+        }));
+        setModalOpen(false);
+        setStatus("");
+        setSelectedFiles([]);
+    };
 
-    useMemo(() => {
-        getStatus(setAllStatus);
-    }, [])
+    useEffect(() => {
+        getStatus((posts) => dispatch(setPosts(posts)));
+    }, [dispatch]);
 
     const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg p-4 w-full px-10 min-h-[110px]";
     const profileImgClass = "w-16 h-16 rounded-full cursor-pointer hover:opacity-80 transition-opacity border-2 border-gray-300";
@@ -95,8 +103,8 @@ export default function PostStatus({ currentUser }) {
                 setSelectedFiles={setSelectedFiles}
             />
             <div className="w-full">
-                {allStatus.map((posts)=> {
-                    return <Post posts={posts} key={posts.id}/>
+                {posts.map((post) => {
+                    return <Post posts={post} key={post.id}/>
                 })}
             </div>
         </div>

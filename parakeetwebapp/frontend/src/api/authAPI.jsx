@@ -3,12 +3,12 @@ import {auth} from '../firebaseConfig'
 import { signOut } from "firebase/auth";
 
 
-export const LoginAPI = (email, password) => {
+export const LoginAPI = async (email, password) => {
     try {
-        let response = signInWithEmailAndPassword(auth, email, password);
-        return response;
-    } catch(err) {
-        alert(err.errors.message);
+      let response = await signInWithEmailAndPassword(auth, email, password);
+      return response;
+    } catch (err) {
+      throw err; // Let Redux handle it via rejectWithValue
     }
 };
 

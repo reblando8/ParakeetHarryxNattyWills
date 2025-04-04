@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import logo from '../../images/ParakeetLogo.png';
 import { AiFillHome, AiOutlineSearch } from "react-icons/ai";
 import { BsPeopleFill, BsChatDotsFill, BsBellFill } from "react-icons/bs";
@@ -7,11 +8,13 @@ import { MdTask, MdSchedule } from "react-icons/md";
 import { FiLogOut } from "react-icons/fi";
 import { CgProfile } from "react-icons/cg";
 import { useNavigate } from 'react-router-dom';
-import { LogoutAPI } from "../../api/authAPI.jsx";
+import { logoutUser } from "../../redux/slices/authSlice";
 import { toast } from "react-toastify";
 
-export default function SideBar({ currentUser }) {
-    let navigate = useNavigate();
+export default function SideBar() {
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.auth);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -27,8 +30,8 @@ export default function SideBar({ currentUser }) {
         goToProfileRoute('/profile',
             {
                 state: {
-                    id: currentUser?.userID, 
-                    email: currentUser?.email
+                    id: user?.uid,
+                    email: user?.email
                 }
             }
         )
@@ -43,15 +46,16 @@ export default function SideBar({ currentUser }) {
         setTimeout(() => setIsSearchOpen(false), 200);
     };
 
-    const logout = async () => {
-        try {
-            await LogoutAPI();
-            toast.success("Logged Out Successfully!");
-            navigate('/login');
-        } catch (error) {
-            console.error("Logout failed:", error);
-            toast.error("Failed to Logout. Try Again!");
-        }
+    const logout = () => {
+        dispatch(logoutUser())
+            .unwrap()
+            .then(() => {
+                toast.success("Logged Out Successfully!");
+                navigate('/login');
+            })
+            .catch(() => {
+                toast.error("Failed to Logout. Try Again!");
+            });
     };
 
     return (
