@@ -5,8 +5,8 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const response = await LoginAPI(email, password);
-      return response.user;
+      const fullUserObject = await LoginAPI(email, password); // 👈 returns merged user + custom fields
+      return fullUserObject; // 👈 send whole object to Redux
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -72,6 +72,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
+        console.log("✅ STORING USER IN REDUX2:", action.payload);
         state.loading = false;
         state.user = action.payload;
       })

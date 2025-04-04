@@ -16,11 +16,11 @@ export default function LoginComponent() {
     
     const login = () => {
         dispatch(loginUser({ email, password }));
-        console.log(user);
     };
 
 
     useEffect(() => {
+        console.log(user);
         if (error) {
             toast.error(error || "Please Check Your Credentials");
         }

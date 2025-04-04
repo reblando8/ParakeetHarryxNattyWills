@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import LikeButton from './LikeButton/LikeButton';
-import { getCurrentUserData } from '../../api/FirestoreAPI';
 import { FaRegComment, FaRetweet, FaRegPaperPlane } from 'react-icons/fa';
 import CommentDropDown from './Comments/CommentDropDown';
 import Slider from "react-slick";
@@ -50,10 +50,7 @@ export default function Post({ posts, key }) {
         setIsOpen(!isOpen);
     };
 
-    const [currentUser, setCurrentUser] = useState({});
-    useMemo(() => {
-        getCurrentUserData(setCurrentUser);
-    }, []);
+    const { user } = useSelector((state) => state.auth);
 
     const goToRoute = (route, state) => {
         navigate(route, state);
@@ -145,7 +142,7 @@ export default function Post({ posts, key }) {
                     <div 
                         onClick={handleToggleDropdown}
                     >
-                        <LikeButton userID={currentUser?.id} postID={posts.id} onClick={[handleToggleDropdown, () => console.log("should change")]} />
+                        <LikeButton userID={user?.uid} postID={posts.id} onClick={[handleToggleDropdown, () => console.log("should change")]} />
                     </div>
                     <button
                         onClick={handleToggleDropdown}
@@ -176,8 +173,8 @@ export default function Post({ posts, key }) {
                     <CommentDropDown 
                         isOpen={isOpen} 
                         postID={posts.id} 
-                        userID={currentUser?.id} 
-                        userName={currentUser?.name} 
+                        userID={user?.uid} 
+                        userName={user?.displayName} 
                     />
                 )}
             </div>

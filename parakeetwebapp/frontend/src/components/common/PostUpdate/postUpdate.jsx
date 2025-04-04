@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import logo from '../../../images/profile-user-svgrepo-com.svg';
 import { createPost, setPosts } from '../../../redux/slices/postsSlice';
 import { getStatus } from '../../../api/FirestoreAPI';
+import { store } from '../../../redux/store';
+import { testingData } from '../../../api/FirestoreAPI';
 
 export default function PostStatus() {
     const dispatch = useDispatch();
@@ -32,14 +34,24 @@ export default function PostStatus() {
         )
     };
 
+    useEffect(() => {
+        if (user) {
+            testingData(user.email).then((data) => {
+                console.log("User data:", data);
+            });
+        }
+      }, [user]);
+
 
     const sendStatus = () => {
+        const user = store.getState().auth.user; // 👈 grab latest user
+        console.log("should be showing the user", user);
         if (!status || !user) return;
         dispatch(createPost({
             status, 
             email: user.email,
-            userName: user.displayName,
-            userID: user.uid,
+            userName: user.name,
+            userID: user.userID,
             files: selectedFiles
         }));
         setModalOpen(false);

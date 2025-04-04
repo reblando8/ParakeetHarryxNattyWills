@@ -1,5 +1,5 @@
-import {firestore, auth, storage} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy} from 'firebase/firestore'
+import {firestore, storage} from '../firebaseConfig'
+import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs} from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL, uploadBytes} from "firebase/storage";
 import { toast } from 'react-toastify';
 import { getUniqueID } from "../Helpers/getUniqueID";
@@ -77,6 +77,18 @@ export const getCurrentUserData = (setCurrentUser) => {
         );
     });
 }
+
+export const testingData = async (email) => {
+    const q = query(collection(firestore, 'users'), where("email", "==", email));
+    const querySnap = await getDocs(q);
+
+  if (!querySnap.empty) {
+    const doc = querySnap.docs[0];
+    return { ...doc.data(), id: doc.id }; // include the doc ID
+  } else {
+    return null;
+  }
+};
 
 export const updateUserData = (userID, payload) => {
     let userToUpdate = doc(usersRef, userID);
