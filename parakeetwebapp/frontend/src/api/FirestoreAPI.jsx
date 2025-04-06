@@ -182,6 +182,7 @@ export const addComment = async (postID, userID, userName, text) => {
         });
         console.log("Comment added!");
     } catch (error) {
+        console.log("postID: ", postID, "userID: ", userID, "userName: ", userName, "text: ", text);
         console.error("Error adding comment: ", error);
     }
 };
@@ -195,13 +196,16 @@ export const deleteComment = async (postID, commentID) => {
     }
 };
 
-export const listenForComments = (postID, setComments) => {
-    const q = query(collection(firestore, `posts/${postID}/comments`), orderBy("timeStamp", "asc"));
-    return onSnapshot(q, (snapshot) => {
-        const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setComments(comments);
-    });
-};
+export const getCommentsForPost = async (postID) => {
+    const q = query(
+      collection(firestore, `posts/${postID}/comments`),
+      orderBy("timeStamp", "asc")
+    );
+  
+    const snapshot = await getDocs(q);
+    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return comments;
+  };
 
 export const createPost = async (userID, userName, status, files) => {
     try {

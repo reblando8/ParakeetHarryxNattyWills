@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { postStatus, getStatus, likePost, addComment, deleteComment } from '../../api/FirestoreAPI';
+import { postStatus, getStatus, likePost, addComment, deleteComment, getCommentsForPost } from '../../api/FirestoreAPI';
 
 export const createPost = createAsyncThunk(
   'posts/createPost',
@@ -19,6 +19,18 @@ export const likePostAsync = createAsyncThunk(
     try {
       await likePost(userID, postID);
       return { userID, postID };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const getComments = createAsyncThunk(
+  'posts/getComments',
+  async ({ postID }, { rejectWithValue }) => {
+    try {
+      const comments = await getCommentsForPost(postID);
+      return { postID, comments };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -53,12 +65,17 @@ const postsSlice = createSlice({
   name: 'posts',
   initialState: {
     posts: [],
+    comments: {},  // Store comments by postID
     loading: false,
     error: null,
   },
   reducers: {
     setPosts: (state, action) => {
       state.posts = action.payload;
+    },
+    setComments: (state, action) => {
+      const { postID, comments } = action.payload;
+      state.comments[postID] = comments;
     },
     clearError: (state) => {
       state.error = null;
@@ -67,6 +84,17 @@ const postsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Create Post
+      .addCase(getComments.fulfilled, (state, action) => {
+        const { postID, comments } = action.payload;
+        state.comments[postID] = comments;
+      })
+      .addCase(getComments.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getComments.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       .addCase(createPost.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -82,6 +110,7 @@ const postsSlice = createSlice({
       .addCase(likePostAsync.rejected, (state, action) => {
         state.error = action.payload;
       })
+      
       // Add Comment
       .addCase(addCommentAsync.rejected, (state, action) => {
         state.error = action.payload;

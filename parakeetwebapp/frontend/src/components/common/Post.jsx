@@ -173,8 +173,8 @@ export default function Post({ posts, key }) {
                     <CommentDropDown 
                         isOpen={isOpen} 
                         postID={posts.id} 
-                        userID={user?.uid} 
-                        userName={user?.displayName} 
+                        userID={user?.userID} 
+                        userName={user?.name} 
                     />
                 )}
             </div>
