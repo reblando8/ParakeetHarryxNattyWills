@@ -10,7 +10,7 @@ export default function ProfileCenterComponent() {
         setIsEditing(!isEditing);
     }
     return (
-        <div className="flex-1 p-4 mx-16 bg-[#f4f2ee] min-w-[900px]">
+        <div className="flex-1 p-4 min-w-[900px]">
             { isEditing ? (<ProfileCardEdit currentUser={user} onEdit={onEdit}/>) : (<ProfileCard currentUser={user} onEdit={onEdit}/>)}
         </div>
     )

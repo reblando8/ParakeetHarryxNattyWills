@@ -11,7 +11,7 @@ export default function SearchLayout() {
     }, [])
     return(
         <div className="flex flex-col w-screen min-h-screen">
-            <div className="bg-[#f4f2ee] min-h-screen overflow-auto overscroll-y-auto">
+            <div className="min-h-screen overflow-auto overscroll-y-auto">
                 <Search currentUser={currentUser} />
             </div>
         </div>

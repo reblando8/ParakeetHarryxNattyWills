@@ -6,7 +6,7 @@
 :root {
   overscroll-behavior: none;  /* Prevent pull-down refresh effect */
   overflow-x: hidden; /* Prevent horizontal scrolling */
-  background-color: #f4f2ee; /* Ensure consistent background */
+  background-color: white; /* Ensure consistent background */
   min-height: 100vh;
   touch-action: manipulation; }
 body {
