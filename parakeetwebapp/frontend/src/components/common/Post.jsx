@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import LikeButton from './LikeButton/LikeButton';
 import { FaRegComment, FaRetweet, FaRegPaperPlane } from 'react-icons/fa';
+import { getComments } from '../../redux/slices/postsSlice';
 import CommentDropDown from './Comments/CommentDropDown';
 import Slider from "react-slick";
 
@@ -30,6 +31,13 @@ const PrevArrow = ({ onClick }) => (
 
 export default function Post({ posts, key }) {
     const [currentSlide, setCurrentSlide] = useState(0);
+    const dispatch = useDispatch();
+    const comments = useSelector(state => state.posts.comments[posts.id] || []);
+
+    useEffect(() => {
+        // Fetch comments count when post is rendered
+        dispatch(getComments({ postID: posts.id }));
+    }, [dispatch, posts.id]);
     const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg pb-0 pt-4 px-4 w-full min-h-[120px] h-auto"; 
     let navigate = useNavigate();
 
@@ -144,12 +152,13 @@ export default function Post({ posts, key }) {
                     >
                         <LikeButton userID={user?.uid} postID={posts.id} onClick={[handleToggleDropdown, () => console.log("should change")]} />
                     </div>
+                    
                     <button
                         onClick={handleToggleDropdown}
-                        className="flex items-center gap-1 text-gray-500 hover:text-blue-500"
+                        className={`flex items-center gap-1 ${comments.length > 0 ? 'text-blue-500' : 'text-gray-500 hover:text-blue-500'}`}
                     >
-                        <FaRegComment size={16} /> {/* Replaced SVG with FaRegComment */}
-                        <span className="text-sm">Comment</span>
+                        <FaRegComment size={16} />
+                        <span className="text-sm">Comment {comments.length > 0 && `(${comments.length})`}</span>
                     </button>
 
                     <button
