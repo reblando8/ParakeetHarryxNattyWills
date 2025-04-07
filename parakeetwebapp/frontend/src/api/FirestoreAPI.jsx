@@ -1,5 +1,5 @@
 import {firestore, storage} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs} from 'firebase/firestore'
+import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs, limit, startAfter} from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL, uploadBytes} from "firebase/storage";
 import { toast } from 'react-toastify';
 import { getUniqueID } from "../Helpers/getUniqueID";
@@ -251,3 +251,35 @@ export const createPost = async (userID, userName, status, files) => {
 
 //Lazy loading and Pagination Stuff
 
+export const getPaginatedPosts = async ({ limitCount = 10, lastVisible = null } = {}) => {
+    try {
+      let q = query(
+        collection(firestore, "posts"),
+        orderBy("timeStamp", "desc"),
+        limit(limitCount)
+      );
+  
+      if (lastVisible) {
+        q = query(
+          collection(firestore, "posts"),
+          orderBy("timeStamp", "desc"),
+          startAfter(lastVisible),
+          limit(limitCount)
+        );
+      }
+  
+      const snapshot = await getDocs(q);
+  
+      const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const newLastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
+  
+      return {
+        posts,
+        lastVisible: newLastVisible,
+        hasMore: snapshot.docs.length === limitCount
+      };
+    } catch (error) {
+      console.error("Error fetching paginated posts:", error);
+      throw error;
+    }
+  };
