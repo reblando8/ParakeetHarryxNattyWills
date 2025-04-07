@@ -249,3 +249,5 @@ export const createPost = async (userID, userName, status, files) => {
   };
   
 
+//Lazy loading and Pagination Stuff
+

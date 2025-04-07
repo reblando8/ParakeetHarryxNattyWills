@@ -23,6 +23,7 @@ export default function ProfileCard({ onEdit }) {
         setCurrentProfile({});
     
         if (location.state?.id) {
+            // getting all posts associated with a specific user
             getSingleStatus(setAllStatus, location.state.id);
         }
     
