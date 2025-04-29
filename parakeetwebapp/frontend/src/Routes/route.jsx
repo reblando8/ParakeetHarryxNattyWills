@@ -3,8 +3,8 @@ import Login from "../pages/Login"
 import Register from "../pages/Register"
 import HomeLayout from "../Layouts/HomeLayout";
 import ProfileLayout from "../Layouts/ProfileLayout";
+import ChatLayout from "../Layouts/ChatLayout";
 import InfoHomeLayout from "../Layouts/InfoHomeLayout";
-
 export const router = createBrowserRouter([
     {
         path: "/login",
@@ -22,6 +22,10 @@ export const router = createBrowserRouter([
     {
         path: "/profile",
         element: < ProfileLayout />
+    },
+    {
+        path: "/chat",
+        element: < ChatLayout />
     },
     {
         path: "/",
