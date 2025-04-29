@@ -1,27 +1,33 @@
-import React, { useState } from "react";
-import { LoginAPI, RegisterAPI, GoogleSignInAPI } from "../api/authAPI.jsx";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from 'react-redux';
+import { registerUser, googleSignIn } from '../redux/slices/authSlice';
 import logo from '../images/ParakeetLogo.png';
 import { postUserData } from "../api/FirestoreAPI.jsx";
-import {toast} from "react-toastify"
+import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 
-export default function LoginComponent() {
+export default function RegisterComponent() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
 
-
+    const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { user, loading, error } = useSelector((state) => state.auth);
 
-    const register = async () => {
-        try {
-            const res = await RegisterAPI(email, password);
-            toast.success("Signed In To Parakeet!")
-            navigate('/home')
+    const register = () => {
+        dispatch(registerUser({ email, password }));
+    };
+
+    useEffect(() => {
+        if (error) {
+            toast.error(error || "Registration failed");
+        }
+        if (user) {
             postUserData({
                 name: name,
-                email: email,
+                email: user.email,
                 achievements: "",
                 careerHighlights: "",
                 education: "",
@@ -33,25 +39,17 @@ export default function LoginComponent() {
                 sport: "",
                 stats: "",
                 team: "",
-                updatedAt: new Date().toISOString(),  // Generates current timestamp
+                updatedAt: new Date().toISOString(),
                 weight: ""
             });
-            localStorage.setItem("userEmail", res.user.email)
-        } catch (error) {
-            console.error("Login failed:", error);
-            toast.error(error.message) // Show popup
+            toast.success("Signed In To Parakeet!");
+            localStorage.setItem("userEmail", user.email);
+            navigate('/home');
         }
-    };
+    }, [user, error, name, navigate]);
 
-    const googleSignIn = async () => {
-        try {
-            const res = await GoogleSignInAPI();
-            toast.success("Signed In To Parakeet!")
-            navigate('/home')
-            localStorage.setItem("userEmail", res.user.email)
-        } catch (error) {
-            console.log(error)
-        }
+    const handleGoogleSignIn = () => {
+        dispatch(googleSignIn());
     };
 
     return (
@@ -94,6 +92,7 @@ export default function LoginComponent() {
 
                     <button
                         onClick={register}
+                        disabled={loading}
                         className="w-full bg-[#581DC1] text-white py-3 rounded-full text-lg font-bold hover:bg-blue-700 transition duration-200"
                     >
                         Agree and Join
@@ -113,7 +112,8 @@ export default function LoginComponent() {
                     </div>
 
                     <button
-                        onClick={googleSignIn}
+                        onClick={handleGoogleSignIn}
+                        disabled={loading}
                         className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 py-3 rounded-full text-lg font-medium hover:bg-gray-100 transition duration-200"
                     >
                         <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo" className="w-6 h-6" />

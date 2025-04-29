@@ -1,5 +1,5 @@
-import {firestore, auth, storage} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy} from 'firebase/firestore'
+import {firestore, storage} from '../firebaseConfig'
+import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs, limit, startAfter} from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL, uploadBytes} from "firebase/storage";
 import { toast } from 'react-toastify';
 import { getUniqueID } from "../Helpers/getUniqueID";
@@ -9,34 +9,37 @@ let postsRef = collection(firestore, 'posts');
 let usersRef = collection(firestore, 'users');
 let likesRef = collection(firestore, 'likes');
 
-export const postStatus = async (status, email, userName, userID, file) => {
+export const postStatus = async (status, email, userName, userID, files) => {
     try {
-        let imageURL = "";
-
-        // Upload image if file is provided
-        if (file) {
-            const storageRef = ref(storage, `posts/${userID}/${getUniqueID()}-${file.name}`);
-            await uploadBytes(storageRef, file);
-            imageURL = await getDownloadURL(storageRef);
+      const imageURLs = [];
+  
+      // Upload each file and collect its download URL
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const storageRef = ref(storage, `posts/${userID}/${getUniqueID()}-${file.name}`);
+          await uploadBytes(storageRef, file);
+          const url = await getDownloadURL(storageRef);
+          imageURLs.push(url);
         }
-
-        const post = {
-            status: status,
-            timeStamp: getCurrentTimeStamp("LLL"),
-            email: email,
-            userName: userName,
-            postID: getUniqueID(),
-            userID: userID,
-            imageURL: imageURL // Store image URL if uploaded
-        };
-
-        await addDoc(postsRef, post);
-        toast.success("You Successfully posted!");
+      }
+  
+      const post = {
+        status: status,
+        timeStamp: getCurrentTimeStamp("LLL"),
+        email: email,
+        userName: userName,
+        postID: getUniqueID(),
+        userID: userID,
+        imageURLs: imageURLs // Store array of image URLs
+      };
+  
+      await addDoc(postsRef, post);
+      toast.success("You successfully posted!");
     } catch (error) {
-        console.log(error);
-        toast.error("Failed to post!");
+      console.error(error);
+      toast.error("Failed to post!");
     }
-};
+  };
 
 
 
@@ -74,6 +77,18 @@ export const getCurrentUserData = (setCurrentUser) => {
         );
     });
 }
+
+export const testingData = async (email) => {
+    const q = query(collection(firestore, 'users'), where("email", "==", email));
+    const querySnap = await getDocs(q);
+
+  if (!querySnap.empty) {
+    const doc = querySnap.docs[0];
+    return { ...doc.data(), id: doc.id }; // include the doc ID
+  } else {
+    return null;
+  }
+};
 
 export const updateUserData = (userID, payload) => {
     let userToUpdate = doc(usersRef, userID);
@@ -167,6 +182,7 @@ export const addComment = async (postID, userID, userName, text) => {
         });
         console.log("Comment added!");
     } catch (error) {
+        console.log("postID: ", postID, "userID: ", userID, "userName: ", userName, "text: ", text);
         console.error("Error adding comment: ", error);
     }
 };
@@ -180,44 +196,90 @@ export const deleteComment = async (postID, commentID) => {
     }
 };
 
-export const listenForComments = (postID, setComments) => {
-    const q = query(collection(firestore, `posts/${postID}/comments`), orderBy("timeStamp", "asc"));
-    return onSnapshot(q, (snapshot) => {
-        const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setComments(comments);
-    });
-};
+export const getCommentsForPost = async (postID) => {
+    const q = query(
+      collection(firestore, `posts/${postID}/comments`),
+      orderBy("timeStamp", "asc")
+    );
+  
+    const snapshot = await getDocs(q);
+    const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return comments;
+  };
 
-export const createPost = async (userID, userName, status, file) => {
+export const createPost = async (userID, userName, status, files) => {
     try {
-        let imageUrl = null;
-        
-        // Upload image if a file is selected
-        if (file) {
-            const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
-            const uploadTask = uploadBytesResumable(storageRef, file);
-            
-            // Wait for upload to complete
-            await new Promise((resolve, reject) => {
-                uploadTask.on("state_changed", null, reject, async () => {
-                    imageUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                    resolve();
-                });
-            });
+      let imageUrls = [];
+  
+      // Upload all files and collect URLs
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+  
+          const url = await new Promise((resolve, reject) => {
+            uploadTask.on(
+              "state_changed",
+              null,
+              reject,
+              async () => {
+                const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(downloadUrl);
+              }
+            );
+          });
+  
+          imageUrls.push(url);
         }
-
-        // Add post data to Firestore
-        await addDoc(collection(firestore, "posts"), {
-            userID,
-            userName,
-            status,
-            imageUrl, // Image URL (null if no file uploaded)
-            timeStamp: serverTimestamp(),
-        });
-
-        console.log("Post created successfully!");
+      }
+  
+      // Add post to Firestore
+      await addDoc(collection(firestore, "posts"), {
+        userID,
+        userName,
+        status,
+        imageUrls, // array of image URLs (may be empty)
+        timeStamp: serverTimestamp(),
+      });
+  
+      console.log("Post created successfully!");
     } catch (error) {
-        console.error("Error creating post:", error);
+      console.error("Error creating post:", error);
     }
-};
+  };
+  
 
+//Lazy loading and Pagination Stuff
+
+export const getPaginatedPosts = async ({ limitCount = 10, lastVisible = null } = {}) => {
+    try {
+      let q = query(
+        collection(firestore, "posts"),
+        orderBy("timeStamp", "desc"),
+        limit(limitCount)
+      );
+  
+      if (lastVisible) {
+        q = query(
+          collection(firestore, "posts"),
+          orderBy("timeStamp", "desc"),
+          startAfter(lastVisible),
+          limit(limitCount)
+        );
+      }
+  
+      const snapshot = await getDocs(q);
+  
+      const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const newLastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
+  
+      return {
+        posts,
+        lastVisible: newLastVisible,
+        hasMore: snapshot.docs.length === limitCount
+      };
+    } catch (error) {
+      console.error("Error fetching paginated posts:", error);
+      throw error;
+    }
+  };

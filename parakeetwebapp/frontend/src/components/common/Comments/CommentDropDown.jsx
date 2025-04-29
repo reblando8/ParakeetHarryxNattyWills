@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { addComment, deleteComment, listenForComments } from '../../../api/FirestoreAPI';
+import { deleteCommentAsync, addCommentAsync, getComments } from '../../../redux/slices/postsSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 export default function CommentDropDown({ onAddComment, isOpen = false, postID, userID, userName }) {
-  const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const dispatch = useDispatch();
+  const comments = useSelector(state => state.posts.comments[postID] || []);
+  const loading = useSelector(state => state.posts.loading);
+  const error = useSelector(state => state.posts.error);
 
-  // Fetch comments in real-time when dropdown is open
+  // Fetch comments when dropdown is opened
   useEffect(() => {
     if (isOpen) {
-      const unsubscribe = listenForComments(postID, setComments);
-      return () => unsubscribe(); // Cleanup listener
+      dispatch(getComments({ postID }))
+        .unwrap()
+        .then(data => console.log("Fetched comments:", data))
+        .catch(error => console.error('Failed to fetch comments:', error));
     }
-  }, [isOpen, postID]);
+  }, [isOpen, postID, dispatch]);
 
   const handleInputChange = (e) => {
     setNewComment(e.target.value);
@@ -19,13 +25,22 @@ export default function CommentDropDown({ onAddComment, isOpen = false, postID, 
 
   const handleAddComment = async () => {
     if (newComment.trim() === "") return;
-    await addComment(postID, userID, userName, newComment);
-    setNewComment(""); // Clear input after adding
-    if (onAddComment) onAddComment(); // Call optional parent function if provided
+    try {
+      await dispatch(addCommentAsync({ postID, userID, userName, text: newComment })).unwrap();
+      setNewComment(""); // Clear input after adding
+      dispatch(getComments({ postID })); // ✅ Refresh comments immediately
+      if (onAddComment) onAddComment();
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+    }
   };
 
   const handleDeleteComment = async (commentID) => {
-    await deleteComment(postID, commentID);
+    try {
+      await dispatch(deleteCommentAsync({ postID, commentID })).unwrap();
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+    }
   };
 
   return (

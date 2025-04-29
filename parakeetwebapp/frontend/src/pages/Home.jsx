@@ -1,26 +1,21 @@
-import React, {useEffect, useState, useMemo} from 'react';
-import HomeComponent from '../components/HomePageComponents/HomeComponent.jsx'
-import { onAuthStateChanged } from 'firebase/auth';
-import {auth} from "../firebaseConfig.js"
-import { useNavigate } from "react-router-dom";
-import Loader from "../components/common/Loader.jsx"
-import { getCurrentUserData } from '../api/FirestoreAPI.jsx';
+import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import HomeComponent from '../components/HomePageComponents/HomeComponent.jsx';
+import Loader from '../components/common/Loader.jsx';
 
+export default function Home() {
+    const navigate = useNavigate();
+    const { user, loading: authLoading } = useSelector((state) => state.auth);
 
-export default function Home({currentUser}) {
-    useMemo(() => {
-        getCurrentUserData()
-    }, [])
-    const [loading, setLoading] = useState(true)
-    let navigate = useNavigate();
     useEffect(() => {
-        onAuthStateChanged(auth, res => {
-            if(!res?.accessToken) {
-                navigate('/login')
-            } else {
-                setLoading(false)
-            }
-        });
-    }, []);
-    return loading ? <Loader/> : <HomeComponent currentUser={currentUser} />
+        if (!authLoading && !user) {
+            navigate('/login');
+        }
+    }, [user, authLoading, navigate]);
+
+    if (authLoading) return <Loader />;
+    if (!user) return null; // Will redirect via useEffect
+
+    return <HomeComponent currentUser={user} />;
 }

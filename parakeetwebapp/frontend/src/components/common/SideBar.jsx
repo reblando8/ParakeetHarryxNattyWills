@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import logo from '../../images/ParakeetLogo.png';
 import { AiFillHome, AiOutlineSearch } from "react-icons/ai";
 import { BsPeopleFill, BsChatDotsFill, BsBellFill } from "react-icons/bs";
@@ -7,11 +8,13 @@ import { MdTask, MdSchedule } from "react-icons/md";
 import { FiLogOut } from "react-icons/fi";
 import { CgProfile } from "react-icons/cg";
 import { useNavigate } from 'react-router-dom';
-import { LogoutAPI } from "../../api/authAPI.jsx";
+import { logoutUser } from "../../redux/slices/authSlice";
 import { toast } from "react-toastify";
 
-export default function SideBar({ currentUser }) {
-    let navigate = useNavigate();
+export default function SideBar() {
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { user } = useSelector((state) => state.auth);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -27,8 +30,8 @@ export default function SideBar({ currentUser }) {
         goToProfileRoute('/profile',
             {
                 state: {
-                    id: currentUser?.userID, 
-                    email: currentUser?.email
+                    id: user?.uid,
+                    email: user?.email
                 }
             }
         )
@@ -43,15 +46,16 @@ export default function SideBar({ currentUser }) {
         setTimeout(() => setIsSearchOpen(false), 200);
     };
 
-    const logout = async () => {
-        try {
-            await LogoutAPI();
-            toast.success("Logged Out Successfully!");
-            navigate('/login');
-        } catch (error) {
-            console.error("Logout failed:", error);
-            toast.error("Failed to Logout. Try Again!");
-        }
+    const logout = () => {
+        dispatch(logoutUser())
+            .unwrap()
+            .then(() => {
+                toast.success("Logged Out Successfully!");
+                navigate('/login');
+            })
+            .catch(() => {
+                toast.error("Failed to Logout. Try Again!");
+            });
     };
 
     return (
@@ -88,45 +92,12 @@ export default function SideBar({ currentUser }) {
                         <span className="font-medium">Home</span>
                     </div>
                     
-                    <div className="relative">
-                        <div 
-                            className="flex items-center space-x-3 text-gray-600 hover:text-black cursor-pointer p-2 rounded-lg hover:bg-gray-100"
-                            onClick={() => setIsSearchOpen(!isSearchOpen)}
-                        >
-                            <AiOutlineSearch className="w-6 h-6" />
-                            <span className="font-medium">Search</span>
-                        </div>
-                        
-                        {/* Search Dropdown */}
-                        {isSearchOpen && (
-                            <div className="absolute left-0 mt-2 w-full bg-white rounded-lg shadow-lg z-50 p-2">
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Search..."
-                                        className="w-full px-4 py-2 rounded-full border focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        onFocus={handleSearchFocus}
-                                        onBlur={handleSearchBlur}
-                                    />
-                                    <AiOutlineSearch className="absolute right-3 top-2.5 w-5 h-5 text-gray-500" />
-                                </div>
-                                
-                                {/* Search Results */}
-                                {isSearchOpen && searchQuery && (
-                                    <div className="mt-2 max-h-48 overflow-y-auto">
-                                        {/* Example results - replace with actual search results */}
-                                        <div className="p-2 hover:bg-gray-100 rounded cursor-pointer">
-                                            <p className="text-sm text-gray-700">Search Result 1</p>
-                                        </div>
-                                        <div className="p-2 hover:bg-gray-100 rounded cursor-pointer">
-                                            <p className="text-sm text-gray-700">Search Result 2</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                    <div 
+                        className="flex items-center space-x-3 text-gray-600 hover:text-black cursor-pointer p-2 rounded-lg hover:bg-gray-100"
+                        onClick={() => goToRoute('/search')}
+                    >
+                        <AiOutlineSearch className="w-6 h-6" />
+                        <span className="font-medium">Search</span>
                     </div>
 
                     <div 
