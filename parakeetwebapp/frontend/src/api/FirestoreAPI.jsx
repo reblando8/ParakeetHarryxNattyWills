@@ -221,7 +221,7 @@ export const createPost = async (userID, userName, status, file) => {
     }
 };
 
-export const searchUsers = async (searchQuery) => {
+export const searchUsers = async (searchQuery, filters = {}) => {
     try {
         if (!searchQuery || searchQuery.trim() === '') {
             return [];
@@ -229,14 +229,13 @@ export const searchUsers = async (searchQuery) => {
 
         const searchTerm = searchQuery.toLowerCase().trim();
         
-        // Search by username (case-insensitive)
+        // Build base queries for username and email search
         const usernameQuery = query(
             usersRef, 
             where("userName", ">=", searchTerm),
             where("userName", "<=", searchTerm + "\uf8ff")
         );
         
-        // Search by email (case-insensitive)
         const emailQuery = query(
             usersRef,
             where("email", ">=", searchTerm),
@@ -264,9 +263,74 @@ export const searchUsers = async (searchQuery) => {
 
         // Combine and deduplicate results
         const allResults = [...usernameResults, ...emailResults];
-        const uniqueResults = allResults.filter((user, index, self) => 
+        let uniqueResults = allResults.filter((user, index, self) => 
             index === self.findIndex(u => u.id === user.id)
         );
+
+        // Apply filters
+        if (filters.sport && filters.sport !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.sport && user.sport.toLowerCase().includes(filters.sport.toLowerCase())
+            );
+        }
+
+        if (filters.position && filters.position !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.position && user.position.toLowerCase().includes(filters.position.toLowerCase())
+            );
+        }
+
+        if (filters.location && filters.location !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.location && user.location.toLowerCase().includes(filters.location.toLowerCase())
+            );
+        }
+
+        if (filters.team && filters.team !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.team && user.team.toLowerCase().includes(filters.team.toLowerCase())
+            );
+        }
+
+        if (filters.education && filters.education !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.education && user.education.toLowerCase().includes(filters.education.toLowerCase())
+            );
+        }
+
+        if (filters.height && filters.height !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.height && user.height.toLowerCase().includes(filters.height.toLowerCase())
+            );
+        }
+
+        if (filters.weight && filters.weight !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.weight && user.weight.toLowerCase().includes(filters.weight.toLowerCase())
+            );
+        }
+
+        // Experience filter (this would need to be parsed from experience field)
+        if (filters.experience && filters.experience !== '') {
+            uniqueResults = uniqueResults.filter(user => {
+                if (!user.experience) return false;
+                const exp = user.experience.toLowerCase();
+                switch (filters.experience) {
+                    case 'rookie':
+                        return exp.includes('rookie') || exp.includes('0') || exp.includes('1 year');
+                    case 'junior':
+                        return exp.includes('junior') || exp.includes('1-3') || exp.includes('2 year') || exp.includes('3 year');
+                    case 'mid':
+                        return exp.includes('mid') || exp.includes('3-5') || exp.includes('4 year') || exp.includes('5 year');
+                    case 'senior':
+                        return exp.includes('senior') || exp.includes('5-10') || exp.includes('6 year') || exp.includes('7 year') || exp.includes('8 year') || exp.includes('9 year') || exp.includes('10 year');
+                    case 'veteran':
+                        return exp.includes('veteran') || exp.includes('10+') || exp.includes('11 year') || exp.includes('12 year') || exp.includes('15 year') || exp.includes('20 year');
+                    default:
+                        return true;
+                }
+            });
+        }
 
         return uniqueResults;
     } catch (error) {

@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SearchBar from "../common/SearchBar/SearchBar";
 import { searchUsers } from "../../api/FirestoreAPI";
 
-export default function SearchCenterComponent({currentUser}) {
+export default function SearchCenterComponent({currentUser, filters = {}}) {
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -12,7 +12,7 @@ export default function SearchCenterComponent({currentUser}) {
         setIsSearching(true);
         
         try {
-            const results = await searchUsers(query);
+            const results = await searchUsers(query, filters);
             setSearchResults(results);
         } catch (error) {
             console.error("Search error:", error);
@@ -21,6 +21,13 @@ export default function SearchCenterComponent({currentUser}) {
             setIsSearching(false);
         }
     };
+
+    // Re-search when filters change
+    useEffect(() => {
+        if (searchQuery) {
+            handleSearch(searchQuery);
+        }
+    }, [filters]);
 
     return (
         <div className="flex-1 bg-white h-screen overflow-y-auto">
@@ -42,27 +49,75 @@ export default function SearchCenterComponent({currentUser}) {
                         </div>
                         {searchResults.map((user, index) => (
                             <div key={user.id || index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                                <div className="flex items-start space-x-4">
+                                    <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
                                         {user.profileImage ? (
                                             <img 
                                                 src={user.profileImage} 
                                                 alt={user.userName} 
-                                                className="w-12 h-12 rounded-full object-cover"
+                                                className="w-16 h-16 rounded-full object-cover"
                                             />
                                         ) : (
-                                            <span className="text-gray-600 font-semibold text-lg">
+                                            <span className="text-gray-600 font-semibold text-xl">
                                                 {user.userName ? user.userName.charAt(0).toUpperCase() : 'U'}
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-gray-800 text-lg">{user.userName || 'Unknown User'}</h3>
-                                        <p className="text-gray-600">{user.email}</p>
-                                        {user.matchType && (
-                                            <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full mt-1">
-                                                Matched by {user.matchType}
-                                            </span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center space-x-2 mb-2">
+                                            <h3 className="font-semibold text-gray-800 text-lg">{user.name || user.userName || 'Unknown User'}</h3>
+                                            {user.matchType && (
+                                                <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                                    {user.matchType}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-gray-600 text-sm mb-2">{user.email}</p>
+                                        
+                                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-2">
+                                            {user.sport && (
+                                                <div>
+                                                    <span className="font-medium">Sport:</span> {user.sport}
+                                                </div>
+                                            )}
+                                            {user.position && (
+                                                <div>
+                                                    <span className="font-medium">Position:</span> {user.position}
+                                                </div>
+                                            )}
+                                            {user.location && (
+                                                <div>
+                                                    <span className="font-medium">Location:</span> {user.location}
+                                                </div>
+                                            )}
+                                            {user.team && (
+                                                <div>
+                                                    <span className="font-medium">Team:</span> {user.team}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {user.education && (
+                                            <div className="text-sm text-gray-600 mb-1">
+                                                <span className="font-medium">Education:</span> {user.education}
+                                            </div>
+                                        )}
+                                        
+                                        {user.experience && (
+                                            <div className="text-sm text-gray-600 mb-1">
+                                                <span className="font-medium">Experience:</span> {user.experience}
+                                            </div>
+                                        )}
+                                        
+                                        {(user.height || user.weight) && (
+                                            <div className="flex space-x-4 text-sm text-gray-600">
+                                                {user.height && (
+                                                    <span><span className="font-medium">Height:</span> {user.height}</span>
+                                                )}
+                                                {user.weight && (
+                                                    <span><span className="font-medium">Weight:</span> {user.weight}</span>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
