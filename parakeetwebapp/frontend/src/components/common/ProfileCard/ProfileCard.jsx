@@ -43,10 +43,15 @@ export default function ProfileCard({ onEdit }) {
     // console.log("currentProfile", currentProfile);
 
     // Determine which data source to use
-    const profileData = Object.keys(currentProfile).length === 0 ? user : currentProfile;
+    const profileData = (currentProfile && Object.keys(currentProfile).length > 0) ? currentProfile : user;
     
     // Check if this is the current user's profile by comparing emails
     const isCurrentUserProfile = profileData?.email === user?.email;
+    
+    // Safety check to ensure profileData exists
+    if (!profileData) {
+        return <Loader />;
+    }
     if (isLoading) {
         return <Loader/>
     } else {

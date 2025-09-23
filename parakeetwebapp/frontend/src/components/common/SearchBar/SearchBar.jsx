@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import html2pdf from 'html2pdf.js'; // Import html2pdf for PDF generation
 import TextResult from '../subComponents/TextResult';
 import TableResult from '../subComponents/TableResult';
+import { sendQuery } from '../../../mcp/sendquery'; // a new helper that wraps the API call
+
 
 const SearchBar = () => {
   const [query, setQuery] = useState('');
@@ -51,32 +53,26 @@ const SearchBar = () => {
 
   // Handle search form submission
   const handleSearch = async (e) => {
+    console.log("handleSearch");
     e.preventDefault();
     if (query.trim() === '' || !selectedFormat) return;
-
+  
     const newEntry = { format: selectedFormat, data: null, query };
     setResultsHistory((prevResults) => [newEntry, ...prevResults]);
-
+  
     try {
-      const response = await fetch('http://127.0.0.1:8000/query', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ user_query: query, format: selectedFormat }),
-      });
-
-      const data = await response.json();
-
+      const response = await sendQuery(query);
+      const data = response.content;// assuming response has a .content field
+  
       setResultsHistory((prevResults) => {
         const updatedResults = [...prevResults];
         updatedResults[0] = { ...updatedResults[0], data };
         return updatedResults;
       });
     } catch (error) {
-      console.error('Error sending search query:', error);
+      console.error('Error sending query to MCP client:', error);
     }
-
+  
     setQuery('');
     setSelectedFormat('');
   };
@@ -203,7 +199,7 @@ const SearchBar = () => {
           {/* Search Button */}
           <button
             type="submit"
-            className="bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 shadow-md"
+            className="bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold cursor-pointer hover:bg-blue-700 transition duration-200 shadow-md"
             disabled={!selectedFormat}
           >
             Search

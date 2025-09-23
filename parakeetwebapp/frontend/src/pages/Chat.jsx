@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import ChatComponent from '../components/common/ChatPageComponents/ChatComponent.jsx';
+import ChatComponent from '../components/ChatPageComponents/ChatComponent.jsx';
 import Loader from '../components/common/Loader.jsx';
 
 export default function Chat() {

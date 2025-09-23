@@ -1,6 +1,12 @@
 {
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.10.2",
+    "express": "^5.1.0",
     "framer-motion": "^12.6.3",
+    "openai": "^4.98.0",
     "react-infinite-scroll-component": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1"
   }
 }
