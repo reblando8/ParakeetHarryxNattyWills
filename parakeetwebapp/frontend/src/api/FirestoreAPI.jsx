@@ -1,5 +1,5 @@
 import {firestore, auth, storage} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy} from 'firebase/firestore'
+import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs} from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL, uploadBytes} from "firebase/storage";
 import { toast } from 'react-toastify';
 import { getUniqueID } from "../Helpers/getUniqueID";
@@ -218,6 +218,61 @@ export const createPost = async (userID, userName, status, file) => {
         console.log("Post created successfully!");
     } catch (error) {
         console.error("Error creating post:", error);
+    }
+};
+
+export const searchUsers = async (searchQuery) => {
+    try {
+        if (!searchQuery || searchQuery.trim() === '') {
+            return [];
+        }
+
+        const searchTerm = searchQuery.toLowerCase().trim();
+        
+        // Search by username (case-insensitive)
+        const usernameQuery = query(
+            usersRef, 
+            where("userName", ">=", searchTerm),
+            where("userName", "<=", searchTerm + "\uf8ff")
+        );
+        
+        // Search by email (case-insensitive)
+        const emailQuery = query(
+            usersRef,
+            where("email", ">=", searchTerm),
+            where("email", "<=", searchTerm + "\uf8ff")
+        );
+
+        // Execute both queries
+        const [usernameSnapshot, emailSnapshot] = await Promise.all([
+            getDocs(usernameQuery),
+            getDocs(emailQuery)
+        ]);
+
+        // Combine results and remove duplicates
+        const usernameResults = usernameSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            matchType: 'username'
+        }));
+
+        const emailResults = emailSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            matchType: 'email'
+        }));
+
+        // Combine and deduplicate results
+        const allResults = [...usernameResults, ...emailResults];
+        const uniqueResults = allResults.filter((user, index, self) => 
+            index === self.findIndex(u => u.id === user.id)
+        );
+
+        return uniqueResults;
+    } catch (error) {
+        console.error("Error searching users:", error);
+        toast.error("Failed to search users");
+        return [];
     }
 };
 
