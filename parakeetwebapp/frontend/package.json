@@ -49,6 +49,7 @@
     ]
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.0.3"
+    "@tailwindcss/postcss": "^4.0.3",
+    "firebase-admin": "^13.5.0"
   }
 }

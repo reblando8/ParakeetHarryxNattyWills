@@ -1,5 +1,5 @@
 import {firestore, auth, storage} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs} from 'firebase/firestore'
+import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs, writeBatch } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL, uploadBytes} from "firebase/storage";
 import { toast } from 'react-toastify';
 import { getUniqueID } from "../Helpers/getUniqueID";
@@ -339,4 +339,54 @@ export const searchUsers = async (searchQuery, filters = {}) => {
         return [];
     }
 };
+
+
+// Temporary client-side importer. Place your JSON at /public/mock/users.json
+// Then call: importUsersFromUrl('/mock/users.json') from an admin-only UI or the console
+export async function importUsersFromUrl(jsonUrl = '/mock/users.json') {
+    try {
+        const res = await fetch(jsonUrl);
+        if (!res.ok) throw new Error(`Failed to fetch ${jsonUrl}`);
+        const data = await res.json();
+
+        const usersCol = collection(firestore, 'users');
+        let batch = writeBatch(firestore);
+        let ops = 0;
+
+        const commit = async () => {
+            if (ops === 0) return;
+            await batch.commit();
+            batch = writeBatch(firestore);
+            ops = 0;
+        };
+
+        const upsert = (id, payload) => {
+            const ref = id ? doc(usersCol, String(id)) : doc(usersCol);
+            batch.set(ref, payload, { merge: true });
+            ops += 1;
+        };
+
+        if (Array.isArray(data)) {
+            for (const item of data) {
+                const { id, ...rest } = item || {};
+                upsert(id, rest);
+                if (ops >= 450) await commit();
+            }
+        } else if (data && typeof data === 'object') {
+            for (const [id, docData] of Object.entries(data)) {
+                upsert(id, docData);
+                if (ops >= 450) await commit();
+            }
+        } else {
+            throw new Error('JSON must be an array of docs or an object keyed by docId.');
+        }
+
+        await commit();
+        toast.success('Users imported successfully');
+    } catch (error) {
+        console.error('Import failed:', error);
+        toast.error('Failed to import users');
+        throw error;
+    }
+}
 
