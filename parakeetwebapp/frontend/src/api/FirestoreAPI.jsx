@@ -221,11 +221,7 @@ export const createPost = async (userID, userName, status, file) => {
     }
 };
 
-<<<<<<< HEAD
 export const searchUsers = async (searchQuery, filters = {}) => {
-=======
-export const searchUsers = async (searchQuery) => {
->>>>>>> 6373c09d757b81915b416235e79bfc0e27b9261d
     try {
         if (!searchQuery || searchQuery.trim() === '') {
             return [];
