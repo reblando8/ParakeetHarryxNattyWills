@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import SearchBar from "../common/SearchBar/SearchBar";
 import { searchUsers } from "../../api/FirestoreAPI";
+import { useNavigate } from "react-router-dom";
 
 export default function SearchCenterComponent({currentUser, filters = {}}) {
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const navigate = useNavigate();
 
     const handleSearch = async (query) => {
         setSearchQuery(query);
@@ -48,7 +50,7 @@ export default function SearchCenterComponent({currentUser, filters = {}}) {
                             </h2>
                         </div>
                         {searchResults.map((user, index) => (
-                            <div key={user.id || index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <div key={user.id || index} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/profile/${user.id}`)}>
                                 <div className="flex items-start space-x-4">
                                     <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
                                         {user.profileImage ? (

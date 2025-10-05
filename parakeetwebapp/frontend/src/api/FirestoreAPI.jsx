@@ -340,3 +340,16 @@ export const searchUsers = async (searchQuery, filters = {}) => {
     }
 };
 
+export const getUserById = async (userId) => {
+    try {
+        if (!userId) return null;
+        const userDocRef = doc(usersRef, userId);
+        const snapshot = await getDoc(userDocRef);
+        if (!snapshot.exists()) return null;
+        return { id: snapshot.id, ...snapshot.data() };
+    } catch (error) {
+        console.error("Error fetching user by id:", error);
+        return null;
+    }
+};
+

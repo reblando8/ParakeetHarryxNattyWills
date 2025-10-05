@@ -25,6 +25,10 @@ export const router = createBrowserRouter([
         element: < ProfileLayout />
     },
     {
+        path: "/profile/:userId",
+        element: < ProfileLayout />
+    },
+    {
         path: "/search",
         element: < SearchLayout />
     },
