@@ -24,11 +24,9 @@ export default function SearchCenterComponent({currentUser, filters = {}}) {
         }
     };
 
-    // Re-search when filters change
+    // Re-search when filters change, even without text query
     useEffect(() => {
-        if (searchQuery) {
-            handleSearch(searchQuery);
-        }
+        handleSearch(searchQuery || '');
     }, [filters]);
 
     return (
@@ -46,7 +44,11 @@ export default function SearchCenterComponent({currentUser, filters = {}}) {
                     <div className="space-y-4">
                         <div className="mb-4">
                             <h2 className="text-lg font-semibold text-gray-700">
-                                Found {searchResults.length} user{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+                                {searchQuery ? (
+                                    <>Found {searchResults.length} user{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"</>
+                                ) : (
+                                    <>Found {searchResults.length} user{searchResults.length !== 1 ? 's' : ''} matching filters</>
+                                )}
                             </h2>
                         </div>
                         {searchResults.map((user, index) => (
@@ -133,7 +135,7 @@ export default function SearchCenterComponent({currentUser, filters = {}}) {
                     </div>
                 ) : (
                     <div className="text-center text-gray-500 py-8">
-                        <p>No search results yet. Start typing to search for users!</p>
+                        <p>No search results yet. {Object.values(filters).some(v => v && v !== '') ? 'Adjust filters to find users.' : 'Start typing or apply filters to search for users.'}</p>
                     </div>
                 )}
             </div>

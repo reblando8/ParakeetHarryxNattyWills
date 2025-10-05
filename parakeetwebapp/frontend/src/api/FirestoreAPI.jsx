@@ -223,49 +223,53 @@ export const createPost = async (userID, userName, status, file) => {
 
 export const searchUsers = async (searchQuery, filters = {}) => {
     try {
-        if (!searchQuery || searchQuery.trim() === '') {
-            return [];
+        const hasText = Boolean(searchQuery && searchQuery.trim() !== '');
+        let uniqueResults = [];
+
+        if (hasText) {
+            const searchTerm = searchQuery.toLowerCase().trim();
+
+            // Build base queries for username and email search
+            const usernameQuery = query(
+                usersRef, 
+                where("userName", ">=", searchTerm),
+                where("userName", "<=", searchTerm + "\uf8ff")
+            );
+            
+            const emailQuery = query(
+                usersRef,
+                where("email", ">=", searchTerm),
+                where("email", "<=", searchTerm + "\uf8ff")
+            );
+
+            // Execute both queries
+            const [usernameSnapshot, emailSnapshot] = await Promise.all([
+                getDocs(usernameQuery),
+                getDocs(emailQuery)
+            ]);
+
+            // Combine results and remove duplicates
+            const usernameResults = usernameSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                matchType: 'username'
+            }));
+
+            const emailResults = emailSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                matchType: 'email'
+            }));
+
+            const allResults = [...usernameResults, ...emailResults];
+            uniqueResults = allResults.filter((user, index, self) => 
+                index === self.findIndex(u => u.id === user.id)
+            );
+        } else {
+            // No text: fetch all users and filter by provided filters only
+            const allUsersSnapshot = await getDocs(usersRef);
+            uniqueResults = allUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         }
-
-        const searchTerm = searchQuery.toLowerCase().trim();
-        
-        // Build base queries for username and email search
-        const usernameQuery = query(
-            usersRef, 
-            where("userName", ">=", searchTerm),
-            where("userName", "<=", searchTerm + "\uf8ff")
-        );
-        
-        const emailQuery = query(
-            usersRef,
-            where("email", ">=", searchTerm),
-            where("email", "<=", searchTerm + "\uf8ff")
-        );
-
-        // Execute both queries
-        const [usernameSnapshot, emailSnapshot] = await Promise.all([
-            getDocs(usernameQuery),
-            getDocs(emailQuery)
-        ]);
-
-        // Combine results and remove duplicates
-        const usernameResults = usernameSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            matchType: 'username'
-        }));
-
-        const emailResults = emailSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            matchType: 'email'
-        }));
-
-        // Combine and deduplicate results
-        const allResults = [...usernameResults, ...emailResults];
-        let uniqueResults = allResults.filter((user, index, self) => 
-            index === self.findIndex(u => u.id === user.id)
-        );
 
         // Apply filters
         if (filters.sport && filters.sport !== '') {
