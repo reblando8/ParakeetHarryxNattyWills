@@ -3,12 +3,15 @@ import SearchLeftComponent from "./SearchLeftComponent";
 import SearchRightComponent from "./SearchRightComponent";
 import SearchCenterComponent from "./SearchCenterComponent";
 import SideBar from "../common/SideBar";
+import ChatIcon from "../common/ChatBot/ChatIcon";
+import ChatPanel from "../common/ChatBot/ChatPanel";
 import { getRecentSearchHistory } from "../../api/FirestoreAPI";
 
 export default function SearchComponent({currentUser}) {
     const [filters, setFilters] = useState({});
     const [history, setHistory] = useState([]);
     const [externalSearchTrigger, setExternalSearchTrigger] = useState({ query: '', filters: null });
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     console.log('SearchComponent received currentUser:', currentUser);
 
@@ -51,8 +54,12 @@ export default function SearchComponent({currentUser}) {
         setExternalSearchTrigger({ query: entry.queryText || '', filters: nextFilters });
     };
 
+    const toggleChat = () => {
+        setIsChatOpen(!isChatOpen);
+    };
+
     return (
-        <div className="flex w-full h-screen">
+        <div className="flex w-full h-screen relative">
             <div className="w-64 flex-none hidden md:block">
                 <div className="w-full h-full">
                     <SideBar currentUser={currentUser} />
@@ -61,6 +68,10 @@ export default function SearchComponent({currentUser}) {
             <SearchLeftComponent onFiltersChange={handleFiltersChange}/>
             <SearchCenterComponent currentUser={currentUser} filters={filters} externalTrigger={externalSearchTrigger} onSearchComplete={refreshHistory}/>
             <SearchRightComponent history={history} onHistoryClick={handleHistoryClick}/>    
+            
+            {/* Chat Components */}
+            <ChatIcon onClick={toggleChat} isOpen={isChatOpen} />
+            <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
         </div>
     )
 }
