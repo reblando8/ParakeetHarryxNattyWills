@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { HiXMark, HiPaperAirplane } from 'react-icons/hi2';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
+import { analyzeUserQuery, generateSearchSummary } from '../../../api/DeepSeekAPI';
+import { searchUsers } from '../../../api/FirestoreAPI';
 
-export default function ChatPanel({ isOpen, onClose, currentUser }) {
+export default function ChatPanel({ isOpen, onClose, currentUser, onSearchRequest, currentFilters }) {
     const getUserName = () => {
         if (currentUser?.name) return currentUser.name;
         if (currentUser?.userName) return currentUser.userName;
@@ -54,48 +56,64 @@ export default function ChatPanel({ isOpen, onClose, currentUser }) {
         };
 
         setMessages(prev => [...prev, userMessage]);
+        const query = inputText.trim();
         setInputText('');
         setIsTyping(true);
 
-        // Simulate bot response
-        setTimeout(() => {
-            const botResponse = getBotResponse(inputText.trim());
+        try {
+            // Use DeepSeek API to analyze the query
+            const analysis = await analyzeUserQuery(query, currentFilters || {});
+            
+            if (analysis.action === 'SEARCH' && analysis.searchParams) {
+                // Perform the search
+                const searchResults = await searchUsers(
+                    analysis.searchParams.query || '', 
+                    analysis.searchParams.filters || {}
+                );
+                
+                // Generate a summary of the search results
+                const summary = await generateSearchSummary(searchResults, analysis.searchParams.query, analysis.searchParams.filters);
+                
+                // Add the bot's response
+                const botMessage = {
+                    id: Date.now() + 1,
+                    text: `${analysis.response}\n\n${summary}`,
+                    isBot: true,
+                    timestamp: new Date(),
+                    searchResults: searchResults,
+                    searchParams: analysis.searchParams
+                };
+                setMessages(prev => [...prev, botMessage]);
+                
+                // Trigger the search in the main component
+                if (onSearchRequest) {
+                    onSearchRequest(analysis.searchParams);
+                }
+            } else {
+                // Regular chat response
+                const botMessage = {
+                    id: Date.now() + 1,
+                    text: analysis.response,
+                    isBot: true,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, botMessage]);
+            }
+        } catch (error) {
+            console.error('Error processing message:', error);
+            // Fallback to basic response
             const botMessage = {
                 id: Date.now() + 1,
-                text: botResponse,
+                text: "I'm having trouble processing your request right now. Please try again or use the search filters directly.",
                 isBot: true,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, botMessage]);
+        } finally {
             setIsTyping(false);
-        }, 1000);
+        }
     };
 
-    const getBotResponse = (userInput) => {
-        const input = userInput.toLowerCase();
-        
-        if (input.includes('search') || input.includes('find')) {
-            return "I can help you search for athletes! Use the search bar above to type names, or use the filters on the left to search by sport, position, location, or other criteria. Try searching for 'basketball' or 'soccer' to see athletes in those sports.";
-        }
-        
-        if (input.includes('filter') || input.includes('sport') || input.includes('position')) {
-            return "Great question! You can filter athletes by:\n• Sport (Basketball, Soccer, Football, etc.)\n• Position (Point Guard, Striker, etc.)\n• Location (City, State)\n• Team name\n• Education level\n• Experience level\n• Physical attributes (Height, Weight)\n\nJust use the filter panel on the left side of the screen!";
-        }
-        
-        if (input.includes('profile') || input.includes('click')) {
-            return "Yes! You can click on any athlete's profile card to view their full profile. This will show you their detailed information, posts, and more. Just click anywhere on the athlete's card in the search results.";
-        }
-        
-        if (input.includes('history') || input.includes('recent')) {
-            return "Your recent searches are saved and displayed on the right side of the screen. You can click on any previous search to quickly repeat it with the same filters. This makes it easy to find athletes you've searched for before!";
-        }
-        
-        if (input.includes('help') || input.includes('how')) {
-            return "I'm here to help! This platform helps you discover and connect with athletes. You can:\n\n1. Search by name using the search bar\n2. Filter by sport, position, location, etc.\n3. Click on profiles to view details\n4. Use your search history for quick access\n\nWhat specific feature would you like to learn about?";
-        }
-        
-        return "I understand you're looking for help with the search feature. I can assist you with finding athletes, using filters, viewing profiles, or navigating the platform. What specific question do you have?";
-    };
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {

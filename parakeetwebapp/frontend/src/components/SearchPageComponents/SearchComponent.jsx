@@ -58,6 +58,19 @@ export default function SearchComponent({currentUser}) {
         setIsChatOpen(!isChatOpen);
     };
 
+    const handleChatSearchRequest = (searchParams) => {
+        // Update filters with the search parameters from chat
+        if (searchParams.filters) {
+            setFilters(searchParams.filters);
+        }
+        
+        // Trigger search with the query and filters
+        setExternalSearchTrigger({ 
+            query: searchParams.query || '', 
+            filters: searchParams.filters || {} 
+        });
+    };
+
     return (
         <div className="flex w-full h-screen relative">
             <div className="w-64 flex-none hidden md:block">
@@ -71,7 +84,13 @@ export default function SearchComponent({currentUser}) {
             
             {/* Chat Components */}
             <ChatIcon onClick={toggleChat} isOpen={isChatOpen} />
-            <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} />
+            <ChatPanel 
+                isOpen={isChatOpen} 
+                onClose={() => setIsChatOpen(false)} 
+                currentUser={currentUser}
+                onSearchRequest={handleChatSearchRequest}
+                currentFilters={filters}
+            />
         </div>
     )
 }
