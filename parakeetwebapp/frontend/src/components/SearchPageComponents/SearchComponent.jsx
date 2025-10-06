@@ -71,7 +71,7 @@ export default function SearchComponent({currentUser}) {
             
             {/* Chat Components */}
             <ChatIcon onClick={toggleChat} isOpen={isChatOpen} />
-            <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+            <ChatPanel isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} currentUser={currentUser} />
         </div>
     )
 }

@@ -2,15 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { HiXMark, HiPaperAirplane } from 'react-icons/hi2';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 
-export default function ChatPanel({ isOpen, onClose }) {
-    const [messages, setMessages] = useState([
-        {
-            id: 1,
-            text: "Hi! I'm your search assistant. I can help you find athletes, answer questions about sports, or guide you through using the search filters. What would you like to know?",
-            isBot: true,
-            timestamp: new Date()
-        }
-    ]);
+export default function ChatPanel({ isOpen, onClose, currentUser }) {
+    const getUserName = () => {
+        if (currentUser?.name) return currentUser.name;
+        if (currentUser?.userName) return currentUser.userName;
+        return 'there';
+    };
+
+    const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef(null);
@@ -29,6 +28,20 @@ export default function ChatPanel({ isOpen, onClose }) {
             inputRef.current.focus();
         }
     }, [isOpen]);
+
+    // Initialize with personalized greeting when chat opens
+    useEffect(() => {
+        if (isOpen && messages.length === 0) {
+            setMessages([
+                {
+                    id: 1,
+                    text: `Hi ${getUserName()}! I'm your search assistant. I can help you find athletes, answer questions about sports, or guide you through using the search filters. What would you like to know?`,
+                    isBot: true,
+                    timestamp: new Date()
+                }
+            ]);
+        }
+    }, [isOpen, currentUser]);
 
     const handleSendMessage = async () => {
         if (!inputText.trim()) return;
