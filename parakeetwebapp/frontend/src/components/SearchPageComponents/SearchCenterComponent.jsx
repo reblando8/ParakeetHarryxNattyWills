@@ -1,21 +1,31 @@
 import React, { useState, useEffect } from "react";
 import SearchBar from "../common/SearchBar/SearchBar";
-import { searchUsers } from "../../api/FirestoreAPI";
+import { searchUsers, saveSearchHistory } from "../../api/FirestoreAPI";
 import { useNavigate } from "react-router-dom";
 
-export default function SearchCenterComponent({currentUser, filters = {}}) {
+export default function SearchCenterComponent({currentUser, filters = {}, externalTrigger, onSearchComplete}) {
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isExternalTrigger, setIsExternalTrigger] = useState(false);
     const navigate = useNavigate();
 
-    const handleSearch = async (query) => {
-        setSearchQuery(query);
+    const handleSearch = async (query, shouldSaveHistory = true) => {
+        const trimmedQuery = query || '';
+        setSearchQuery(trimmedQuery);
         setIsSearching(true);
         
         try {
-            const results = await searchUsers(query, filters);
+            const results = await searchUsers(trimmedQuery, filters);
             setSearchResults(results);
+            if (currentUser?.id && shouldSaveHistory) {
+                await saveSearchHistory({ userID: currentUser.id, queryText: trimmedQuery, filters });
+                console.log('Search history saved for user:', currentUser.id, 'query:', trimmedQuery, 'filters:', filters);
+                // Refresh the history list
+                if (onSearchComplete) {
+                    onSearchComplete();
+                }
+            }
         } catch (error) {
             console.error("Search error:", error);
             setSearchResults([]);
@@ -26,8 +36,22 @@ export default function SearchCenterComponent({currentUser, filters = {}}) {
 
     // Re-search when filters change, even without text query
     useEffect(() => {
-        handleSearch(searchQuery || '');
+        if (!isExternalTrigger) {
+            handleSearch(searchQuery || '');
+        }
     }, [filters]);
+
+    // Handle external trigger from history clicks
+    useEffect(() => {
+        if (!externalTrigger) return;
+        if (externalTrigger.filters) {
+            setIsExternalTrigger(true);
+            // The parent already set filters; just run with provided query
+            handleSearch(externalTrigger.query || '');
+            // Reset the flag after a short delay
+            setTimeout(() => setIsExternalTrigger(false), 100);
+        }
+    }, [externalTrigger?.query, externalTrigger?.filters]);
 
     return (
         <div className="flex-1 bg-white h-screen overflow-y-auto">

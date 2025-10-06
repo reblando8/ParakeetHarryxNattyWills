@@ -6,7 +6,7 @@ export default function SearchBar({ onSearch, placeholder = "Search..." }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (onSearch && query.trim()) {
+        if (onSearch) {
             onSearch(query.trim());
         }
     };

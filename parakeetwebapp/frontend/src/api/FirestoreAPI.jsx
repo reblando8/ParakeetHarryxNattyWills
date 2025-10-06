@@ -1,5 +1,5 @@
 import {firestore, auth, storage} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs} from 'firebase/firestore'
+import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs, limit } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL, uploadBytes} from "firebase/storage";
 import { toast } from 'react-toastify';
 import { getUniqueID } from "../Helpers/getUniqueID";
@@ -8,6 +8,7 @@ import { getCurrentTimeStamp } from "../Helpers/UseMoment";
 let postsRef = collection(firestore, 'posts');
 let usersRef = collection(firestore, 'users');
 let likesRef = collection(firestore, 'likes');
+let searchHistoryRef = collection(firestore, 'searchHistory');
 
 export const postStatus = async (status, email, userName, userID, file) => {
     try {
@@ -340,6 +341,57 @@ export const searchUsers = async (searchQuery, filters = {}) => {
     } catch (error) {
         console.error("Error searching users:", error);
         toast.error("Failed to search users");
+        return [];
+    }
+};
+
+export const saveSearchHistory = async ({ userID, queryText = '', filters = {} }) => {
+    try {
+        if (!userID) {
+            console.log('No userID provided for search history');
+            return;
+        }
+        const entry = {
+            userID,
+            queryText,
+            filters,
+            createdAt: serverTimestamp(),
+        };
+        console.log('Saving search history entry:', entry);
+        const docRef = await addDoc(searchHistoryRef, entry);
+        console.log('Search history saved with ID:', docRef.id);
+    } catch (error) {
+        console.error('Error saving search history:', error);
+    }
+};
+
+export const getRecentSearchHistory = async (userID, count = 10) => {
+    try {
+        if (!userID) {
+            console.log('No userID provided for fetching search history');
+            return [];
+        }
+        console.log('Fetching search history for userID:', userID);
+        
+        // First try to get all search history for this user without ordering
+        const q = query(searchHistoryRef, where('userID', '==', userID));
+        const snap = await getDocs(q);
+        const results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Sort by createdAt on the client side and limit
+        const sortedResults = results
+            .sort((a, b) => {
+                if (!a.createdAt || !b.createdAt) return 0;
+                return b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime();
+            })
+            .slice(0, count);
+            
+        console.log('Fetched search history results:', sortedResults);
+        return sortedResults;
+    } catch (error) {
+        console.error('Error fetching search history:', error);
+        console.error('Error details:', error.message);
+        console.error('Error code:', error.code);
         return [];
     }
 };

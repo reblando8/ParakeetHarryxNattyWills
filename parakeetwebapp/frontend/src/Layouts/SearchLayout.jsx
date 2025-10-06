@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Home from '../pages/Home'
 import TopBar from '../components/common/TopBar'
 import { getCurrentUserData } from '../api/FirestoreAPI.jsx';
@@ -7,7 +7,7 @@ import Search from "../pages/Search.jsx";
 
 export default function SearchLayout() {
     const [currentUser, setCurrentUser] = useState({});
-    useMemo(() => {
+    useEffect(() => {
         getCurrentUserData(setCurrentUser)
     }, [])
     return(
