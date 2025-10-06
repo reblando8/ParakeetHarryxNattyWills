@@ -41,16 +41,18 @@ export default function SearchCenterComponent({currentUser, filters = {}, extern
         }
     }, [filters]);
 
-    // Handle external trigger from history clicks
+    // Handle external trigger from history clicks or chat
     useEffect(() => {
         if (!externalTrigger) return;
-        if (externalTrigger.filters) {
-            setIsExternalTrigger(true);
-            // The parent already set filters; just run with provided query
-            handleSearch(externalTrigger.query || '');
-            // Reset the flag after a short delay
-            setTimeout(() => setIsExternalTrigger(false), 100);
-        }
+        
+        setIsExternalTrigger(true);
+        // Run the search with the provided query and filters
+        handleSearch(externalTrigger.query || '');
+        
+        // Reset the flag after a longer delay to ensure the search completes
+        setTimeout(() => {
+            setIsExternalTrigger(false);
+        }, 1000);
     }, [externalTrigger?.query, externalTrigger?.filters]);
 
     return (

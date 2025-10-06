@@ -50,8 +50,11 @@ export default function SearchComponent({currentUser}) {
 
     const handleHistoryClick = (entry) => {
         const nextFilters = entry.filters || {};
+        // Set filters first, then trigger search after a brief delay to avoid duplicate searches
         setFilters(nextFilters);
-        setExternalSearchTrigger({ query: entry.queryText || '', filters: nextFilters });
+        setTimeout(() => {
+            setExternalSearchTrigger({ query: entry.queryText || '', filters: nextFilters });
+        }, 50);
     };
 
     const toggleChat = () => {
