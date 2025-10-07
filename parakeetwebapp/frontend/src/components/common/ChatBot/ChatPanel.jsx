@@ -3,8 +3,9 @@ import { HiXMark, HiPaperAirplane } from 'react-icons/hi2';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 import { analyzeUserQuery, generateSearchSummary } from '../../../api/DeepSeekAPI';
 import { searchUsers } from '../../../api/FirestoreAPI';
+import ChatProfileCard from './ChatProfileCard';
 
-export default function ChatPanel({ isOpen, onClose, currentUser, onSearchRequest, currentFilters }) {
+export default function ChatPanel({ isOpen, onClose, currentUser, onSearchRequest, currentFilters, onProfileClick }) {
     const getUserName = () => {
         if (currentUser?.name) return currentUser.name;
         if (currentUser?.userName) return currentUser.userName;
@@ -160,24 +161,48 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ height: 'calc(70vh - 140px)' }}>
                     {messages.map((message) => (
-                        <div
-                            key={message.id}
-                            className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
-                        >
+                        <div key={message.id}>
                             <div
-                                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                                    message.isBot
-                                        ? 'bg-gray-100 text-gray-900'
-                                        : 'bg-blue-600 text-white'
-                                }`}
+                                className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
                             >
-                                <p className="text-sm whitespace-pre-line">{message.text}</p>
-                                <p className={`text-xs mt-1 ${
-                                    message.isBot ? 'text-gray-500' : 'text-blue-100'
-                                }`}>
-                                    {formatTime(message.timestamp)}
-                                </p>
+                                <div
+                                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                                        message.isBot
+                                            ? 'bg-gray-100 text-gray-900'
+                                            : 'bg-blue-600 text-white'
+                                    }`}
+                                >
+                                    <p className="text-sm whitespace-pre-line">{message.text}</p>
+                                    <p className={`text-xs mt-1 ${
+                                        message.isBot ? 'text-gray-500' : 'text-blue-100'
+                                    }`}>
+                                        {formatTime(message.timestamp)}
+                                    </p>
+                                </div>
                             </div>
+                            
+                            {/* Display search results as profile cards */}
+                            {message.isBot && message.searchResults && message.searchResults.length > 0 && (
+                                <div className="mt-3 ml-2">
+                                    <div className="text-xs text-gray-500 mb-2 font-medium">
+                                        Found {message.searchResults.length} athlete{message.searchResults.length !== 1 ? 's' : ''}:
+                                    </div>
+                                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                                        {message.searchResults.slice(0, 5).map((user, index) => (
+                                            <ChatProfileCard 
+                                                key={user.id || index} 
+                                                user={user} 
+                                                onProfileClick={onProfileClick}
+                                            />
+                                        ))}
+                                        {message.searchResults.length > 5 && (
+                                            <div className="text-xs text-gray-500 text-center py-2">
+                                                ... and {message.searchResults.length - 5} more results
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))}
                     

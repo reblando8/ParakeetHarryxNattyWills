@@ -74,6 +74,11 @@ export default function SearchComponent({currentUser}) {
         });
     };
 
+    const handleProfileClick = (user) => {
+        // Navigate to the user's profile
+        window.location.href = `/profile/${user.id}`;
+    };
+
     return (
         <div className="flex w-full h-screen relative">
             <div className="w-64 flex-none hidden md:block">
@@ -93,6 +98,7 @@ export default function SearchComponent({currentUser}) {
                 currentUser={currentUser}
                 onSearchRequest={handleChatSearchRequest}
                 currentFilters={filters}
+                onProfileClick={handleProfileClick}
             />
         </div>
     )
