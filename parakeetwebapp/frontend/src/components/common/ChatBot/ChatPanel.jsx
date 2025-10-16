@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { HiXMark, HiPaperAirplane } from 'react-icons/hi2';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
-import { analyzeUserQuery, generateSearchSummary } from '../../../api/OpenAiAPI';
+import { analyzeUserQuery, generateSearchSummary, getAthleteInfo } from '../../../api/OpenAiAPI';
 import { searchUsers } from '../../../api/FirestoreAPI';
 import ChatProfileCard from './ChatProfileCard';
 
@@ -15,6 +15,7 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [recentSearchResults, setRecentSearchResults] = useState([]);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -62,7 +63,7 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
         setIsTyping(true);
 
         try {
-            // Use DeepSeek API to analyze the query
+            // Use OpenAI API to analyze the query
             const analysis = await analyzeUserQuery(query, currentFilters || {});
             
             if (analysis.action === 'SEARCH' && analysis.searchParams) {
@@ -71,6 +72,9 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                     analysis.searchParams.query || '', 
                     analysis.searchParams.filters || {}
                 );
+                
+                // Store search results for athlete info queries
+                setRecentSearchResults(searchResults);
                 
                 // Generate a summary of the search results
                 const summary = await generateSearchSummary(searchResults, analysis.searchParams.query, analysis.searchParams.filters);
@@ -90,6 +94,17 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                 if (onSearchRequest) {
                     onSearchRequest(analysis.searchParams);
                 }
+            } else if (analysis.action === 'ATHLETE_INFO' && analysis.athleteName) {
+                // Get detailed athlete information
+                const athleteInfo = await getAthleteInfo(analysis.athleteName, recentSearchResults);
+                
+                const botMessage = {
+                    id: Date.now() + 1,
+                    text: athleteInfo,
+                    isBot: true,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, botMessage]);
             } else {
                 // Regular chat response
                 const botMessage = {
@@ -120,6 +135,46 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage();
+        }
+    };
+
+    const handleTellMeMore = async (user) => {
+        const athleteName = user.name || user.userName || 'this athlete';
+        const query = `Tell me about ${athleteName}`;
+        
+        // Add user message
+        const userMessage = {
+            id: Date.now(),
+            text: query,
+            isBot: false,
+            timestamp: new Date()
+        };
+        setMessages(prev => [...prev, userMessage]);
+        
+        setIsTyping(true);
+        
+        try {
+            // Get detailed athlete information
+            const athleteInfo = await getAthleteInfo(athleteName, recentSearchResults);
+            
+            const botMessage = {
+                id: Date.now() + 1,
+                text: athleteInfo,
+                isBot: true,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, botMessage]);
+        } catch (error) {
+            console.error('Error getting athlete info:', error);
+            const botMessage = {
+                id: Date.now() + 1,
+                text: "I'm having trouble getting detailed information about this athlete right now. Please try again.",
+                isBot: true,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, botMessage]);
+        } finally {
+            setIsTyping(false);
         }
     };
 
@@ -193,6 +248,7 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                                                 key={user.id || index} 
                                                 user={user} 
                                                 onProfileClick={onProfileClick}
+                                                onTellMeMore={handleTellMeMore}
                                             />
                                         ))}
                                         {message.searchResults.length > 5 && (

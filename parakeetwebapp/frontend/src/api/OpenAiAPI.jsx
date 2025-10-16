@@ -45,6 +45,7 @@ Your job is to analyze user queries and determine if they want to:
 1. SEARCH - Find athletes based on criteria
 2. HELP - Get help with using the platform
 3. CHAT - General conversation
+4. ATHLETE_INFO - Get detailed information about a specific athlete
 
 Available search filters:
 - sport: Basketball, Soccer, Football, Baseball, Tennis, Golf, Swimming, Track & Field, Volleyball, Other
@@ -60,7 +61,7 @@ Current active filters: ${JSON.stringify(currentFilters)}
 
 Respond with a JSON object in this exact format:
 {
-    "action": "SEARCH|HELP|CHAT",
+    "action": "SEARCH|HELP|CHAT|ATHLETE_INFO",
     "response": "Your response to the user",
     "searchParams": {
         "query": "search text if searching",
@@ -74,18 +75,22 @@ Respond with a JSON object in this exact format:
             "height": "value if mentioned",
             "weight": "value if mentioned"
         }
-    }
+    },
+    "athleteName": "athlete name if asking about specific athlete"
 }
 
 Examples:
 User: "Find basketball players in Los Angeles"
-Response: {"action": "SEARCH", "response": "I'll search for basketball players in Los Angeles for you!", "searchParams": {"query": "", "filters": {"sport": "Basketball", "location": "Los Angeles"}}}
+Response: {"action": "SEARCH", "response": "I'll search for basketball players in Los Angeles for you!", "searchParams": {"query": "", "filters": {"sport": "Basketball", "location": "Los Angeles"}}, "athleteName": null}
+
+User: "Tell me about John Smith"
+Response: {"action": "ATHLETE_INFO", "response": "I'll get detailed information about John Smith for you!", "searchParams": null, "athleteName": "John Smith"}
 
 User: "How do I use filters?"
-Response: {"action": "HELP", "response": "I can help you with filters! You can filter athletes by sport, position, location, team, education, experience level, and physical attributes. Just use the filter panel on the left side of the screen.", "searchParams": null}}
+Response: {"action": "HELP", "response": "I can help you with filters! You can filter athletes by sport, position, location, team, education, experience level, and physical attributes. Just use the filter panel on the left side of the screen.", "searchParams": null, "athleteName": null}
 
 User: "What's the weather like?"
-Response: {"action": "CHAT", "response": "I'm focused on helping you find athletes and use this sports platform. Is there anything about searching for athletes I can help you with?", "searchParams": null}}`;
+Response: {"action": "CHAT", "response": "I'm focused on helping you find athletes and use this sports platform. Is there anything about searching for athletes I can help you with?", "searchParams": null, "athleteName": null}`;
 
         const response = await fetch(OPENAI_API_URL, {
             method: 'POST',
@@ -200,6 +205,16 @@ Response: {"action": "CHAT", "response": "I'm focused on helping you find athlet
 const getFallbackResponse = (userQuery) => {
     const input = userQuery.toLowerCase();
     
+    // Athlete-specific queries
+    if (input.includes('tell me about') || input.includes('who is') || input.includes('about this athlete') || 
+        input.includes('more about') || input.includes('details about') || input.includes('rundown of')) {
+        return {
+            action: 'ATHLETE_INFO',
+            response: "I'd be happy to tell you more about this athlete! However, I need to know which specific athlete you're asking about. You can either:\n\n1. Click on an athlete's profile card above\n2. Tell me their name\n3. Ask about a specific athlete from the search results",
+            searchParams: null
+        };
+    }
+    
     // Search-related queries
     if (input.includes('basketball') || input.includes('soccer') || input.includes('football') || input.includes('baseball')) {
         const sport = input.includes('basketball') ? 'Basketball' : 
@@ -265,6 +280,69 @@ const getFallbackResponse = (userQuery) => {
         response: "I'm currently experiencing some technical difficulties with my AI assistant, but I can still help you with basic search functionality! Try using the search bar or filters to find athletes. What would you like to search for?",
         searchParams: null
     };
+};
+
+// Get detailed athlete information
+export const getAthleteInfo = async (athleteName, searchResults = []) => {
+    try {
+        if (!athleteName) {
+            return "I need to know which athlete you're asking about. Please specify their name or click on a profile card above.";
+        }
+
+        // First, try to find the athlete in recent search results
+        let athlete = searchResults.find(user => 
+            user.name?.toLowerCase().includes(athleteName.toLowerCase()) ||
+            user.userName?.toLowerCase().includes(athleteName.toLowerCase())
+        );
+
+        if (!athlete) {
+            // If not found in search results, search for the athlete
+            const searchResults = await searchUsers(athleteName, {});
+            athlete = searchResults.find(user => 
+                user.name?.toLowerCase().includes(athleteName.toLowerCase()) ||
+                user.userName?.toLowerCase().includes(athleteName.toLowerCase())
+            );
+        }
+
+        if (!athlete) {
+            return `I couldn't find an athlete named "${athleteName}". Please check the spelling or try searching for them first.`;
+        }
+
+        // Generate detailed athlete rundown
+        const rundown = generateAthleteRundown(athlete);
+        return rundown;
+
+    } catch (error) {
+        console.error('Error getting athlete info:', error);
+        return "I'm having trouble getting athlete information right now. Please try again or use the search to find the athlete first.";
+    }
+};
+
+// Generate a detailed rundown of an athlete
+const generateAthleteRundown = (athlete) => {
+    const name = athlete.name || athlete.userName || 'Unknown Athlete';
+    const sport = athlete.sport || 'Not specified';
+    const position = athlete.position || 'Not specified';
+    const location = athlete.location || 'Not specified';
+    const team = athlete.team || 'Not specified';
+    const education = athlete.education || 'Not specified';
+    const experience = athlete.experience || 'Not specified';
+    const height = athlete.height || 'Not specified';
+    const weight = athlete.weight || 'Not specified';
+    const bio = athlete.bio || athlete.about || 'No bio available';
+
+    return `🏆 **${name}** - ${sport} ${position}
+
+📍 **Location:** ${location}
+🏟️ **Team:** ${team}
+🎓 **Education:** ${education}
+⭐ **Experience Level:** ${experience}
+📏 **Physical Stats:** ${height}, ${weight}
+
+📝 **About:**
+${bio}
+
+💡 **Quick Summary:** ${name} is a ${experience} level ${sport} player who plays ${position} for ${team} in ${location}. ${education !== 'Not specified' ? `They studied at ${education}.` : ''} ${height !== 'Not specified' && weight !== 'Not specified' ? `Their physical stats are ${height} and ${weight}.` : ''}`;
 };
 
 export const generateSearchSummary = async (searchResults, searchQuery, filters) => {

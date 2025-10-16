@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function ChatProfileCard({ user, onProfileClick }) {
+export default function ChatProfileCard({ user, onProfileClick, onTellMeMore }) {
     const navigate = useNavigate();
 
     const handleClick = () => {
@@ -9,6 +9,13 @@ export default function ChatProfileCard({ user, onProfileClick }) {
             onProfileClick(user);
         } else {
             navigate(`/profile/${user.id}`);
+        }
+    };
+
+    const handleTellMeMore = (e) => {
+        e.stopPropagation(); // Prevent profile click
+        if (onTellMeMore) {
+            onTellMeMore(user);
         }
     };
 
@@ -82,6 +89,16 @@ export default function ChatProfileCard({ user, onProfileClick }) {
                         </div>
                     )}
                 </div>
+            </div>
+            
+            {/* Tell me more button */}
+            <div className="mt-2 flex justify-end">
+                <button
+                    onClick={handleTellMeMore}
+                    className="px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors"
+                >
+                    Tell me more
+                </button>
             </div>
         </div>
     );
