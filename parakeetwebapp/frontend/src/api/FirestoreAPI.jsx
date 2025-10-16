@@ -1,5 +1,5 @@
 import {firestore, auth, storage} from '../firebaseConfig'
-import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy} from 'firebase/firestore'
+import { addDoc, collection, onSnapshot, doc, updateDoc, query, where, arrayUnion, setDoc, getDoc, deleteDoc, serverTimestamp, orderBy, getDocs, limit } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL, uploadBytes} from "firebase/storage";
 import { toast } from 'react-toastify';
 import { getUniqueID } from "../Helpers/getUniqueID";
@@ -8,6 +8,7 @@ import { getCurrentTimeStamp } from "../Helpers/UseMoment";
 let postsRef = collection(firestore, 'posts');
 let usersRef = collection(firestore, 'users');
 let likesRef = collection(firestore, 'likes');
+let searchHistoryRef = collection(firestore, 'searchHistory');
 
 export const postStatus = async (status, email, userName, userID, file) => {
     try {
@@ -218,6 +219,193 @@ export const createPost = async (userID, userName, status, file) => {
         console.log("Post created successfully!");
     } catch (error) {
         console.error("Error creating post:", error);
+    }
+};
+
+export const searchUsers = async (searchQuery, filters = {}) => {
+    try {
+        const hasText = Boolean(searchQuery && searchQuery.trim() !== '');
+        let uniqueResults = [];
+
+        if (hasText) {
+            const searchTerm = searchQuery.toLowerCase().trim();
+
+            // Build base queries for username and email search
+            const usernameQuery = query(
+                usersRef, 
+                where("userName", ">=", searchTerm),
+                where("userName", "<=", searchTerm + "\uf8ff")
+            );
+            
+            const emailQuery = query(
+                usersRef,
+                where("email", ">=", searchTerm),
+                where("email", "<=", searchTerm + "\uf8ff")
+            );
+
+            // Execute both queries
+            const [usernameSnapshot, emailSnapshot] = await Promise.all([
+                getDocs(usernameQuery),
+                getDocs(emailQuery)
+            ]);
+
+            // Combine results and remove duplicates
+            const usernameResults = usernameSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                matchType: 'username'
+            }));
+
+            const emailResults = emailSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                matchType: 'email'
+            }));
+
+            const allResults = [...usernameResults, ...emailResults];
+            uniqueResults = allResults.filter((user, index, self) => 
+                index === self.findIndex(u => u.id === user.id)
+            );
+        } else {
+            // No text: fetch all users and filter by provided filters only
+            const allUsersSnapshot = await getDocs(usersRef);
+            uniqueResults = allUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        // Apply filters
+        if (filters.sport && filters.sport !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.sport && user.sport.toLowerCase().includes(filters.sport.toLowerCase())
+            );
+        }
+
+        if (filters.position && filters.position !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.position && user.position.toLowerCase().includes(filters.position.toLowerCase())
+            );
+        }
+
+        if (filters.location && filters.location !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.location && user.location.toLowerCase().includes(filters.location.toLowerCase())
+            );
+        }
+
+        if (filters.team && filters.team !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.team && user.team.toLowerCase().includes(filters.team.toLowerCase())
+            );
+        }
+
+        if (filters.education && filters.education !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.education && user.education.toLowerCase().includes(filters.education.toLowerCase())
+            );
+        }
+
+        if (filters.height && filters.height !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.height && user.height.toLowerCase().includes(filters.height.toLowerCase())
+            );
+        }
+
+        if (filters.weight && filters.weight !== '') {
+            uniqueResults = uniqueResults.filter(user => 
+                user.weight && user.weight.toLowerCase().includes(filters.weight.toLowerCase())
+            );
+        }
+
+        // Experience filter (this would need to be parsed from experience field)
+        if (filters.experience && filters.experience !== '') {
+            uniqueResults = uniqueResults.filter(user => {
+                if (!user.experience) return false;
+                const exp = user.experience.toLowerCase();
+                switch (filters.experience) {
+                    case 'rookie':
+                        return exp.includes('rookie') || exp.includes('0') || exp.includes('1 year');
+                    case 'junior':
+                        return exp.includes('junior') || exp.includes('1-3') || exp.includes('2 year') || exp.includes('3 year');
+                    case 'mid':
+                        return exp.includes('mid') || exp.includes('3-5') || exp.includes('4 year') || exp.includes('5 year');
+                    case 'senior':
+                        return exp.includes('senior') || exp.includes('5-10') || exp.includes('6 year') || exp.includes('7 year') || exp.includes('8 year') || exp.includes('9 year') || exp.includes('10 year');
+                    case 'veteran':
+                        return exp.includes('veteran') || exp.includes('10+') || exp.includes('11 year') || exp.includes('12 year') || exp.includes('15 year') || exp.includes('20 year');
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        return uniqueResults;
+    } catch (error) {
+        console.error("Error searching users:", error);
+        toast.error("Failed to search users");
+        return [];
+    }
+};
+
+export const saveSearchHistory = async ({ userID, queryText = '', filters = {} }) => {
+    try {
+        if (!userID) {
+            console.log('No userID provided for search history');
+            return;
+        }
+        const entry = {
+            userID,
+            queryText,
+            filters,
+            createdAt: serverTimestamp(),
+        };
+        console.log('Saving search history entry:', entry);
+        const docRef = await addDoc(searchHistoryRef, entry);
+        console.log('Search history saved with ID:', docRef.id);
+    } catch (error) {
+        console.error('Error saving search history:', error);
+    }
+};
+
+export const getRecentSearchHistory = async (userID, count = 10) => {
+    try {
+        if (!userID) {
+            console.log('No userID provided for fetching search history');
+            return [];
+        }
+        console.log('Fetching search history for userID:', userID);
+        
+        // First try to get all search history for this user without ordering
+        const q = query(searchHistoryRef, where('userID', '==', userID));
+        const snap = await getDocs(q);
+        const results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Sort by createdAt on the client side and limit
+        const sortedResults = results
+            .sort((a, b) => {
+                if (!a.createdAt || !b.createdAt) return 0;
+                return b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime();
+            })
+            .slice(0, count);
+            
+        console.log('Fetched search history results:', sortedResults);
+        return sortedResults;
+    } catch (error) {
+        console.error('Error fetching search history:', error);
+        console.error('Error details:', error.message);
+        console.error('Error code:', error.code);
+        return [];
+    }
+};
+
+export const getUserById = async (userId) => {
+    try {
+        if (!userId) return null;
+        const userDocRef = doc(usersRef, userId);
+        const snapshot = await getDoc(userDocRef);
+        if (!snapshot.exists()) return null;
+        return { id: snapshot.id, ...snapshot.data() };
+    } catch (error) {
+        console.error("Error fetching user by id:", error);
+        return null;
     }
 };
 
