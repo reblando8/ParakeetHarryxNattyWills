@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { HiXMark, HiPaperAirplane } from 'react-icons/hi2';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
-import { analyzeUserQuery, generateSearchSummary } from '../../../api/DeepSeekAPI';
+import { analyzeUserQuery, generateSearchSummary } from '../../../api/OpenAiAPI';
 import { searchUsers } from '../../../api/FirestoreAPI';
 import ChatProfileCard from './ChatProfileCard';
 

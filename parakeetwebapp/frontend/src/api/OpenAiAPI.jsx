@@ -1,11 +1,11 @@
-// DeepSeek API integration for intelligent chat responses and search actions
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
-const DEEPSEEK_API_KEY = process.env.REACT_APP_DEEPSEEK_API_KEY; // Add this to your .env file
+// OpenAI API integration for intelligent chat responses and search actions
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY; // Add this to your .env file
 
 export const analyzeUserQuery = async (userQuery, currentFilters = {}) => {
     try {
-        if (!DEEPSEEK_API_KEY) {
-            throw new Error('DeepSeek API key not configured');
+        if (!OPENAI_API_KEY) {
+            throw new Error('OpenAI API key not configured');
         }
 
         const systemPrompt = `You are an intelligent search assistant for a sports athlete discovery platform. 
@@ -56,14 +56,14 @@ Response: {"action": "HELP", "response": "I can help you with filters! You can f
 User: "What's the weather like?"
 Response: {"action": "CHAT", "response": "I'm focused on helping you find athletes and use this sports platform. Is there anything about searching for athletes I can help you with?", "searchParams": null}}`;
 
-        const response = await fetch(DEEPSEEK_API_URL, {
+        const response = await fetch(OPENAI_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                'Authorization': `Bearer ${OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'deepseek-chat',
+                model: 'gpt-3.5-turbo',
                 messages: [
                     {
                         role: 'system',
@@ -80,7 +80,7 @@ Response: {"action": "CHAT", "response": "I'm focused on helping you find athlet
         });
 
         if (!response.ok) {
-            throw new Error(`DeepSeek API error: ${response.status}`);
+            throw new Error(`OpenAI API error: ${response.status}`);
         }
 
         const data = await response.json();
@@ -99,7 +99,7 @@ Response: {"action": "CHAT", "response": "I'm focused on helping you find athlet
             };
         }
     } catch (error) {
-        console.error('DeepSeek API error:', error);
+        console.error('OpenAI API error:', error);
         return {
             action: 'CHAT',
             response: "I'm having trouble connecting to my AI assistant right now. I can still help you with basic questions about using the search features!",
@@ -110,7 +110,7 @@ Response: {"action": "CHAT", "response": "I'm focused on helping you find athlet
 
 export const generateSearchSummary = async (searchResults, searchQuery, filters) => {
     try {
-        if (!DEEPSEEK_API_KEY || !searchResults || searchResults.length === 0) {
+        if (!OPENAI_API_KEY || !searchResults || searchResults.length === 0) {
             return `Found ${searchResults.length} athletes matching your search criteria.`;
         }
 
@@ -130,14 +130,14 @@ Keep it concise (1-2 sentences) and encouraging.`;
             location: athlete.location || 'Not specified'
         }));
 
-        const response = await fetch(DEEPSEEK_API_URL, {
+        const response = await fetch(OPENAI_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                'Authorization': `Bearer ${OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'deepseek-chat',
+                model: 'gpt-3.5-turbo',
                 messages: [
                     {
                         role: 'system',
@@ -154,13 +154,13 @@ Keep it concise (1-2 sentences) and encouraging.`;
         });
 
         if (!response.ok) {
-            throw new Error(`DeepSeek API error: ${response.status}`);
+            throw new Error(`OpenAI API error: ${response.status}`);
         }
 
         const data = await response.json();
         return data.choices[0].message.content;
     } catch (error) {
-        console.error('DeepSeek summary error:', error);
+        console.error('OpenAI summary error:', error);
         return `Found ${searchResults.length} athletes matching your search criteria. Click on any profile to learn more!`;
     }
 };
