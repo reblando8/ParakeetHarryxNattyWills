@@ -310,8 +310,8 @@ export const getAthleteInfo = async (athleteName, searchResults = []) => {
             return `I couldn't find an athlete named "${athleteName}". Please check the spelling or try searching for them first.`;
         }
 
-        // Generate detailed athlete rundown
-        const rundown = generateAthleteRundown(athlete);
+        // Generate detailed athlete rundown using OpenAI
+        const rundown = await generateAthleteRundown(athlete);
         return rundown;
 
     } catch (error) {
@@ -320,8 +320,77 @@ export const getAthleteInfo = async (athleteName, searchResults = []) => {
     }
 };
 
-// Generate a detailed rundown of an athlete
-const generateAthleteRundown = (athlete) => {
+// Generate a detailed rundown of an athlete using OpenAI
+const generateAthleteRundown = async (athlete) => {
+    try {
+        if (!OPENAI_API_KEY) {
+            // Fallback to basic template if no API key
+            return generateBasicAthleteRundown(athlete);
+        }
+
+        const athleteData = {
+            name: athlete.name || athlete.userName || 'Unknown Athlete',
+            sport: athlete.sport || 'Not specified',
+            position: athlete.position || 'Not specified',
+            location: athlete.location || 'Not specified',
+            team: athlete.team || 'Not specified',
+            education: athlete.education || 'Not specified',
+            experience: athlete.experience || 'Not specified',
+            height: athlete.height || 'Not specified',
+            weight: athlete.weight || 'Not specified',
+            bio: athlete.bio || athlete.about || 'No bio available'
+        };
+
+        const systemPrompt = `You are a sports analyst writing detailed athlete profiles. Create an engaging, professional rundown of an athlete that highlights their key attributes, background, and potential.
+
+Format your response as a detailed athlete profile with:
+- A compelling headline
+- Key stats and information in an organized format
+- An engaging summary that showcases the athlete's strengths and background
+- Use emojis and formatting to make it visually appealing
+- Keep it informative but engaging and easy to read
+
+Focus on what makes this athlete unique and interesting.`;
+
+        const response = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo-1106',
+                messages: [
+                    {
+                        role: 'system',
+                        content: systemPrompt
+                    },
+                    {
+                        role: 'user',
+                        content: `Create a detailed athlete profile for: ${JSON.stringify(athleteData)}`
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 500
+            })
+        });
+
+        if (!response.ok) {
+            console.error('OpenAI API error for athlete rundown:', response.status);
+            return generateBasicAthleteRundown(athlete);
+        }
+
+        const data = await response.json();
+        return data.choices[0].message.content;
+
+    } catch (error) {
+        console.error('Error generating athlete rundown with OpenAI:', error);
+        return generateBasicAthleteRundown(athlete);
+    }
+};
+
+// Fallback basic athlete rundown
+const generateBasicAthleteRundown = (athlete) => {
     const name = athlete.name || athlete.userName || 'Unknown Athlete';
     const sport = athlete.sport || 'Not specified';
     const position = athlete.position || 'Not specified';
