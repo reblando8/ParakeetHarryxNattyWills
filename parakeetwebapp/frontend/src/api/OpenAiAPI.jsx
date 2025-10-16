@@ -1,4 +1,6 @@
 // OpenAI API integration for intelligent chat responses and search actions
+import { searchUsers } from './FirestoreAPI';
+
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY; // Add this to your .env file
 
