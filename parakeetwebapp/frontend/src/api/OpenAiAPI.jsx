@@ -2,11 +2,42 @@
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY; // Add this to your .env file
 
+// Rate limiting and cost control
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
+let requestCount = 0;
+const MAX_REQUESTS_PER_SESSION = 50; // Limit requests per session
+
 export const analyzeUserQuery = async (userQuery, currentFilters = {}) => {
     try {
+        console.log('OpenAI API Key loaded:', !!OPENAI_API_KEY);
+        console.log('API Key starts with:', OPENAI_API_KEY ? OPENAI_API_KEY.substring(0, 10) + '...' : 'undefined');
+        
         if (!OPENAI_API_KEY) {
             throw new Error('OpenAI API key not configured');
         }
+
+        // Check request limit
+        if (requestCount >= MAX_REQUESTS_PER_SESSION) {
+            console.log('Request limit reached, using fallback');
+            const fallbackResponse = getFallbackResponse(userQuery);
+            return {
+                action: fallbackResponse.action,
+                response: `⚠️ I've reached my request limit for this session. ${fallbackResponse.response}`,
+                searchParams: fallbackResponse.searchParams
+            };
+        }
+
+        // Rate limiting - wait if requests are too frequent
+        const now = Date.now();
+        const timeSinceLastRequest = now - lastRequestTime;
+        if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+            const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+            console.log(`Rate limiting: waiting ${waitTime}ms`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+        lastRequestTime = Date.now();
+        requestCount++;
 
         const systemPrompt = `You are an intelligent search assistant for a sports athlete discovery platform. 
         
@@ -63,7 +94,7 @@ Response: {"action": "CHAT", "response": "I'm focused on helping you find athlet
                 'Authorization': `Bearer ${OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-3.5-turbo-1106',
                 messages: [
                     {
                         role: 'system',
@@ -80,10 +111,63 @@ Response: {"action": "CHAT", "response": "I'm focused on helping you find athlet
         });
 
         if (!response.ok) {
-            throw new Error(`OpenAI API error: ${response.status}`);
+            const errorText = await response.text();
+            console.error('OpenAI API Error Response:', errorText);
+            
+            // Handle rate limiting with retry
+            if (response.status === 429) {
+                console.log('Rate limited, waiting 2 seconds before retry...');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Retry once
+                const retryResponse = await fetch(OPENAI_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo-1106',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: systemPrompt
+                            },
+                            {
+                                role: 'user',
+                                content: userQuery
+                            }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 1000
+                    })
+                });
+                
+                if (!retryResponse.ok) {
+                    throw new Error(`OpenAI API error: ${retryResponse.status} - Rate limit exceeded. Please try again later.`);
+                }
+                
+                const retryData = await retryResponse.json();
+                console.log('OpenAI API Retry Response:', retryData);
+                const retryContent = retryData.choices[0].message.content;
+                
+                try {
+                    const parsedResponse = JSON.parse(retryContent);
+                    return parsedResponse;
+                } catch (parseError) {
+                    console.error('Failed to parse OpenAI retry response:', retryContent);
+                    return {
+                        action: 'CHAT',
+                        response: "I understand you're looking for help. I can assist you with finding athletes, using search filters, or navigating the platform. What would you like to know?",
+                        searchParams: null
+                    };
+                }
+            }
+            
+            throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
+        console.log('OpenAI API Response:', data);
         const content = data.choices[0].message.content;
         
         // Parse the JSON response
@@ -100,12 +184,87 @@ Response: {"action": "CHAT", "response": "I'm focused on helping you find athlet
         }
     } catch (error) {
         console.error('OpenAI API error:', error);
+        
+        // Provide helpful fallback responses based on common queries
+        const fallbackResponse = getFallbackResponse(userQuery);
+        
         return {
-            action: 'CHAT',
-            response: "I'm having trouble connecting to my AI assistant right now. I can still help you with basic questions about using the search features!",
+            action: fallbackResponse.action,
+            response: fallbackResponse.response,
+            searchParams: fallbackResponse.searchParams
+        };
+    }
+};
+
+// Fallback responses when OpenAI API is unavailable
+const getFallbackResponse = (userQuery) => {
+    const input = userQuery.toLowerCase();
+    
+    // Search-related queries
+    if (input.includes('basketball') || input.includes('soccer') || input.includes('football') || input.includes('baseball')) {
+        const sport = input.includes('basketball') ? 'Basketball' : 
+                     input.includes('soccer') ? 'Soccer' : 
+                     input.includes('football') ? 'Football' : 'Baseball';
+        
+        return {
+            action: 'SEARCH',
+            response: `I'll search for ${sport} players for you!`,
+            searchParams: {
+                query: '',
+                filters: { sport: sport }
+            }
+        };
+    }
+    
+    if (input.includes('search') || input.includes('find')) {
+        return {
+            action: 'SEARCH',
+            response: "I'll help you search for athletes! Use the search bar above or the filters on the left to find athletes by sport, position, location, or other criteria.",
+            searchParams: {
+                query: input.replace(/search|find/gi, '').trim(),
+                filters: {}
+            }
+        };
+    }
+    
+    if (input.includes('filter') || input.includes('sport') || input.includes('position')) {
+        return {
+            action: 'HELP',
+            response: "You can filter athletes by:\n• Sport (Basketball, Soccer, Football, etc.)\n• Position (Point Guard, Striker, etc.)\n• Location (City, State)\n• Team name\n• Education level\n• Experience level\n• Physical attributes (Height, Weight)\n\nUse the filter panel on the left side of the screen!",
             searchParams: null
         };
     }
+    
+    if (input.includes('profile') || input.includes('click')) {
+        return {
+            action: 'HELP',
+            response: "Yes! You can click on any athlete's profile card to view their full profile. This will show you their detailed information, posts, and more. Just click anywhere on the athlete's card in the search results.",
+            searchParams: null
+        };
+    }
+    
+    if (input.includes('history') || input.includes('recent')) {
+        return {
+            action: 'HELP',
+            response: "Your recent searches are saved and displayed on the right side of the screen. You can click on any previous search to quickly repeat it with the same filters. This makes it easy to find athletes you've searched for before!",
+            searchParams: null
+        };
+    }
+    
+    if (input.includes('help') || input.includes('how')) {
+        return {
+            action: 'HELP',
+            response: "I'm here to help! This platform helps you discover and connect with athletes. You can:\n\n1. Search by name using the search bar\n2. Filter by sport, position, location, etc.\n3. Click on profiles to view details\n4. Use your search history for quick access\n\nWhat specific feature would you like to learn about?",
+            searchParams: null
+        };
+    }
+    
+    // Default response
+    return {
+        action: 'CHAT',
+        response: "I'm currently experiencing some technical difficulties with my AI assistant, but I can still help you with basic search functionality! Try using the search bar or filters to find athletes. What would you like to search for?",
+        searchParams: null
+    };
 };
 
 export const generateSearchSummary = async (searchResults, searchQuery, filters) => {
@@ -137,7 +296,7 @@ Keep it concise (1-2 sentences) and encouraging.`;
                 'Authorization': `Bearer ${OPENAI_API_KEY}`
             },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-3.5-turbo-1106',
                 messages: [
                     {
                         role: 'system',
