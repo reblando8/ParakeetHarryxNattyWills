@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { HiXMark, HiPaperAirplane } from 'react-icons/hi2';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 import { analyzeUserQuery, generateSearchSummary, getAthleteInfo } from '../../../api/OpenAiAPI';
+import { analyzeUserQueryWithRAG, performRAGSearch, getEnhancedAthleteInfo, initializeRAG } from '../../../api/RAGService';
 import { searchUsers } from '../../../api/FirestoreAPI';
 import ChatProfileCard from './ChatProfileCard';
 
@@ -16,6 +17,7 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [recentSearchResults, setRecentSearchResults] = useState([]);
+    const [ragInitialized, setRagInitialized] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -39,13 +41,35 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
             setMessages([
                 {
                     id: 1,
-                    text: `Hi ${getUserName()}! I'm your search assistant. I can help you find athletes, answer questions about sports, or guide you through using the search filters. What would you like to know?`,
+                    text: `Hi ${getUserName()}! I'm your AI-powered search assistant. I can help you find athletes, answer questions about sports, or guide you through using the search filters. I have access to detailed athlete information to provide more personalized recommendations. What would you like to know?`,
                     isBot: true,
                     timestamp: new Date()
                 }
             ]);
         }
     }, [isOpen, currentUser]);
+
+    // Initialize RAG when chat opens
+    useEffect(() => {
+        if (isOpen && !ragInitialized) {
+            initializeRAGWithAthletes();
+        }
+    }, [isOpen, ragInitialized]);
+
+    // Initialize RAG with athlete data
+    const initializeRAGWithAthletes = async () => {
+        try {
+            // Get some athlete data to initialize RAG
+            const athletes = await searchUsers('', {}); // Get all athletes
+            if (athletes.length > 0) {
+                await initializeRAG(athletes.slice(0, 50)); // Initialize with first 50 athletes
+                setRagInitialized(true);
+                console.log('RAG initialized successfully');
+            }
+        } catch (error) {
+            console.error('Error initializing RAG:', error);
+        }
+    };
 
     const handleSendMessage = async () => {
         if (!inputText.trim()) return;
@@ -63,21 +87,32 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
         setIsTyping(true);
 
         try {
-            // Use OpenAI API to analyze the query
-            const analysis = await analyzeUserQuery(query, currentFilters || {});
+            // Use RAG-enhanced analysis if available, fallback to regular analysis
+            let analysis;
+            if (ragInitialized) {
+                analysis = await analyzeUserQueryWithRAG(query, currentFilters || {}, recentSearchResults);
+            } else {
+                analysis = await analyzeUserQuery(query, currentFilters || {});
+            }
             
             if (analysis.action === 'SEARCH' && analysis.searchParams) {
-                // Perform the search
-                const searchResults = await searchUsers(
-                    analysis.searchParams.query || '', 
-                    analysis.searchParams.filters || {}
-                );
+                // Perform RAG-enhanced search if available
+                let searchResults, summary;
+                if (ragInitialized) {
+                    const ragSearchResult = await performRAGSearch(analysis.searchParams, currentFilters || {});
+                    searchResults = ragSearchResult.searchResults;
+                    summary = `Found ${searchResults.length} athletes matching your criteria. ${analysis.ragContext ? `\n\nBased on our database: ${analysis.ragContext}` : ''}`;
+                } else {
+                    // Fallback to regular search
+                    searchResults = await searchUsers(
+                        analysis.searchParams.query || '', 
+                        analysis.searchParams.filters || {}
+                    );
+                    summary = await generateSearchSummary(searchResults, analysis.searchParams.query, analysis.searchParams.filters);
+                }
                 
                 // Store search results for athlete info queries
                 setRecentSearchResults(searchResults);
-                
-                // Generate a summary of the search results
-                const summary = await generateSearchSummary(searchResults, analysis.searchParams.query, analysis.searchParams.filters);
                 
                 // Add the bot's response
                 const botMessage = {
@@ -86,7 +121,8 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                     isBot: true,
                     timestamp: new Date(),
                     searchResults: searchResults,
-                    searchParams: analysis.searchParams
+                    searchParams: analysis.searchParams,
+                    ragContext: analysis.ragContext || null
                 };
                 setMessages(prev => [...prev, botMessage]);
                 
@@ -95,23 +131,34 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                     onSearchRequest(analysis.searchParams);
                 }
             } else if (analysis.action === 'ATHLETE_INFO' && analysis.athleteName) {
-                // Get detailed athlete information
-                const athleteInfo = await getAthleteInfo(analysis.athleteName, recentSearchResults);
+                // Get enhanced athlete information if RAG is available
+                let athleteInfo;
+                if (ragInitialized) {
+                    athleteInfo = await getEnhancedAthleteInfo(analysis.athleteName, recentSearchResults);
+                } else {
+                    athleteInfo = await getAthleteInfo(analysis.athleteName, recentSearchResults);
+                }
                 
                 const botMessage = {
                     id: Date.now() + 1,
                     text: athleteInfo,
                     isBot: true,
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    ragContext: analysis.ragContext || null
                 };
                 setMessages(prev => [...prev, botMessage]);
             } else {
-                // Regular chat response
+                // Regular chat response with RAG context if available
+                const responseText = analysis.ragContext ? 
+                    `${analysis.response}\n\n*Based on our athlete database: ${analysis.ragContext}*` : 
+                    analysis.response;
+                
                 const botMessage = {
                     id: Date.now() + 1,
-                    text: analysis.response,
+                    text: responseText,
                     isBot: true,
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    ragContext: analysis.ragContext || null
                 };
                 setMessages(prev => [...prev, botMessage]);
             }
@@ -154,8 +201,13 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
         setIsTyping(true);
         
         try {
-            // Get detailed athlete information
-            const athleteInfo = await getAthleteInfo(athleteName, recentSearchResults);
+            // Get enhanced athlete information if RAG is available
+            let athleteInfo;
+            if (ragInitialized) {
+                athleteInfo = await getEnhancedAthleteInfo(athleteName, recentSearchResults);
+            } else {
+                athleteInfo = await getAthleteInfo(athleteName, recentSearchResults);
+            }
             
             const botMessage = {
                 id: Date.now() + 1,
@@ -202,7 +254,9 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                         </div>
                         <div>
                             <h3 className="font-semibold text-gray-900">Search Assistant</h3>
-                            <p className="text-sm text-gray-500">Online</p>
+                            <p className="text-sm text-gray-500">
+                                {ragInitialized ? 'AI-Powered (RAG Active)' : 'Online'}
+                            </p>
                         </div>
                     </div>
                     <button
