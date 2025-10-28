@@ -224,6 +224,7 @@ export const createPost = async (userID, userName, status, file) => {
 
 export const searchUsers = async (searchQuery, filters = {}) => {
     try {
+        console.log('searchUsers called with:', { searchQuery, filters });
         const hasText = Boolean(searchQuery && searchQuery.trim() !== '');
         let uniqueResults = [];
 
@@ -270,13 +271,31 @@ export const searchUsers = async (searchQuery, filters = {}) => {
             // No text: fetch all users and filter by provided filters only
             const allUsersSnapshot = await getDocs(usersRef);
             uniqueResults = allUsersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log('Fetched all users:', uniqueResults.length);
         }
 
+        console.log('Before filtering, uniqueResults count:', uniqueResults.length);
+        
+        // Log sample sports to help debug
+        if (uniqueResults.length > 0) {
+            const sampleSports = [...new Set(uniqueResults.slice(0, 10).map(u => u.sport).filter(Boolean))];
+            console.log('Sample sports in database:', sampleSports);
+        }
+        
         // Apply filters
         if (filters.sport && filters.sport !== '') {
-            uniqueResults = uniqueResults.filter(user => 
-                user.sport && user.sport.toLowerCase().includes(filters.sport.toLowerCase())
-            );
+            console.log('Filtering by sport:', filters.sport);
+            const beforeFilterCount = uniqueResults.length;
+            
+            // Log why athletes are being filtered out
+            uniqueResults = uniqueResults.filter(user => {
+                const matches = user.sport && user.sport.toLowerCase().includes(filters.sport.toLowerCase());
+                if (!matches && user.sport) {
+                    console.log(`User ${user.name || user.userName} sport: "${user.sport}" does not include "${filters.sport}"`);
+                }
+                return matches;
+            });
+            console.log(`Sport filter: ${beforeFilterCount} -> ${uniqueResults.length}`);
         }
 
         if (filters.position && filters.position !== '') {
@@ -337,6 +356,11 @@ export const searchUsers = async (searchQuery, filters = {}) => {
             });
         }
 
+        console.log('Final search results count:', uniqueResults.length);
+        if (uniqueResults.length > 0 && uniqueResults.length <= 5) {
+            console.log('Sample results:', uniqueResults.map(r => ({ name: r.name, sport: r.sport, position: r.position })));
+        }
+        
         return uniqueResults;
     } catch (error) {
         console.error("Error searching users:", error);

@@ -11,8 +11,14 @@ export const analyzeUserQueryWithRAG = async (userQuery, currentFilters = {}, re
         console.log('Analyzing query with RAG:', userQuery);
         
         // First, try to get relevant context using RAG
-        const ragResults = await searchWithRAG(userQuery, 3);
-        console.log('RAG results:', ragResults);
+        let ragResults = [];
+        try {
+            ragResults = await searchWithRAG(userQuery, 3);
+            console.log('RAG results:', ragResults);
+        } catch (ragError) {
+            console.warn('RAG search failed, continuing without context:', ragError);
+            ragResults = [];
+        }
         
         // Build context from RAG results
         const ragContext = ragResults.length > 0 ? 
@@ -23,10 +29,14 @@ export const analyzeUserQueryWithRAG = async (userQuery, currentFilters = {}, re
         const systemPrompt = `You are an intelligent search assistant for a sports athlete discovery platform. 
         
 Your job is to analyze user queries and determine if they want to:
-1. SEARCH - Find athletes based on criteria
+1. SEARCH - Find athletes based on criteria (USE THIS for any request to find/show/display athletes)
 2. HELP - Get help with using the platform
 3. CHAT - General conversation
 4. ATHLETE_INFO - Get detailed information about a specific athlete
+
+IMPORTANT: If the user wants to find, show, display, search, or browse athletes, use action "SEARCH".
+If asking for ALL athletes, use SEARCH with empty filters.
+If asking for athletes by sport/location/team, use SEARCH with appropriate filters.
 
 Available search filters:
 - sport: Basketball, Soccer, Football, Baseball, Tennis, Golf, Swimming, Track & Field, Volleyball, Other
@@ -45,12 +55,17 @@ ${ragContext}
 
 Use this context to provide more informed and specific responses. If the user is asking about specific athletes mentioned in the context, reference them directly.
 
+CRITICAL EXAMPLES:
+User: "show me all athletes" → {"action": "SEARCH", "response": "I'll show you all athletes!", "searchParams": {"query": "", "filters": {}}, "athleteName": null, "ragContext": "..."}
+User: "find swimmers" → {"action": "SEARCH", "response": "I'll find swimmers for you!", "searchParams": {"query": "", "filters": {"sport": "Swimming"}}, "athleteName": null, "ragContext": "..."}
+User: "basketball players in Miami" → {"action": "SEARCH", "response": "I'll find basketball players in Miami!", "searchParams": {"query": "", "filters": {"sport": "Basketball", "location": "Miami"}}, "athleteName": null, "ragContext": "..."}
+
 Respond with a JSON object in this exact format:
 {
     "action": "SEARCH|HELP|CHAT|ATHLETE_INFO",
     "response": "Your response to the user (use the context above to be more specific)",
     "searchParams": {
-        "query": "search text if searching",
+        "query": "search text if searching (usually empty string)",
         "filters": {
             "sport": "value if mentioned",
             "position": "value if mentioned", 
@@ -95,15 +110,28 @@ Respond with a JSON object in this exact format:
 
         const data = await response.json();
         const content = data.choices[0].message.content;
+        console.log('OpenAI raw response:', content);
         
         try {
             const parsedResponse = JSON.parse(content);
+            console.log('Parsed OpenAI response:', parsedResponse);
+            
+            // Ensure searchParams is always an object
+            if (parsedResponse.action === 'SEARCH' && !parsedResponse.searchParams) {
+                console.warn('OpenAI returned SEARCH but no searchParams, adding defaults');
+                parsedResponse.searchParams = {
+                    query: '',
+                    filters: {}
+                };
+            }
+            
             return {
                 ...parsedResponse,
                 ragResults: ragResults // Include RAG results for debugging
             };
         } catch (parseError) {
             console.error('Failed to parse OpenAI response:', content);
+            console.error('Parse error:', parseError);
             return {
                 action: 'CHAT',
                 response: "I understand you're looking for help. I can assist you with finding athletes, using search filters, or navigating the platform. What would you like to know?",
@@ -127,30 +155,57 @@ Respond with a JSON object in this exact format:
 // Enhanced search with RAG context
 export const performRAGSearch = async (searchParams, currentFilters = {}) => {
     try {
-        // Perform regular search
+        console.log('performRAGSearch called with params:', searchParams);
+        
+        // Perform regular search FIRST - this is the critical part
         const searchResults = await searchUsers(
             searchParams.query || '', 
             searchParams.filters || {}
         );
         
-        // Get RAG context for the search results
-        const ragContext = await searchWithRAG(
-            `${searchParams.query} ${JSON.stringify(searchParams.filters)}`, 
-            5
-        );
+        console.log('searchUsers returned results:', searchResults?.length || 0);
+        
+        // Get RAG context for the search results (optional enhancement)
+        let ragContext = [];
+        try {
+            ragContext = await searchWithRAG(
+                `${searchParams.query || ''} ${JSON.stringify(searchParams.filters || {})}`, 
+                5
+            );
+            console.log('RAG context retrieved:', ragContext?.length || 0);
+        } catch (ragError) {
+            console.warn('RAG context failed, but continuing with search results:', ragError);
+            ragContext = [];
+        }
         
         return {
-            searchResults,
-            ragContext,
+            searchResults: searchResults || [],
+            ragContext: ragContext || [],
             searchParams
         };
     } catch (error) {
         console.error('RAG search error:', error);
-        return {
-            searchResults: [],
-            ragContext: [],
-            searchParams
-        };
+        console.error('Error details:', error.message, error.stack);
+        
+        // Even on error, try to return whatever we can get
+        try {
+            const fallbackResults = await searchUsers(
+                searchParams.query || '', 
+                searchParams.filters || {}
+            );
+            return {
+                searchResults: fallbackResults || [],
+                ragContext: [],
+                searchParams
+            };
+        } catch (fallbackError) {
+            console.error('Fallback search also failed:', fallbackError);
+            return {
+                searchResults: [],
+                ragContext: [],
+                searchParams
+            };
+        }
     }
 };
 
