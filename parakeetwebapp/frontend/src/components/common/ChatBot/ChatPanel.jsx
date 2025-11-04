@@ -3,7 +3,7 @@ import { HiXMark, HiPaperAirplane } from 'react-icons/hi2';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 import { analyzeUserQuery, generateSearchSummary, getAthleteInfo } from '../../../api/OpenAiAPI';
 import { analyzeUserQueryWithRAG, performRAGSearch, getEnhancedAthleteInfo, initializeRAG } from '../../../api/RAGService';
-import { searchUsers } from '../../../api/FirestoreAPI';
+import { searchUsers, saveSearchHistory } from '../../../api/FirestoreAPI';
 import ChatProfileCard from './ChatProfileCard';
 
 export default function ChatPanel({ isOpen, onClose, currentUser, onSearchRequest, currentFilters, onProfileClick }) {
@@ -148,6 +148,23 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                 
                 // Store search results for athlete info queries
                 setRecentSearchResults(searchResults);
+                
+                // Save search history
+                if (currentUser?.id && analysis.searchParams) {
+                    try {
+                        await saveSearchHistory({
+                            userID: currentUser.id,
+                            queryText: analysis.searchParams.query || '',
+                            filters: analysis.searchParams.filters || {}
+                        });
+                        console.log('Search history saved from chat:', {
+                            query: analysis.searchParams.query,
+                            filters: analysis.searchParams.filters
+                        });
+                    } catch (error) {
+                        console.error('Error saving search history from chat:', error);
+                    }
+                }
                 
                 // Add the bot's response
                 const botMessage = {

@@ -1,6 +1,6 @@
 // RAG Service for enhanced chatbot responses
 import { searchWithRAG, indexAthleteForRAG } from './EmbeddingAPI';
-import { searchUsers } from './FirestoreAPI';
+import { searchUsers, getUserById } from './FirestoreAPI';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
@@ -157,20 +157,12 @@ export const performRAGSearch = async (searchParams, currentFilters = {}) => {
     try {
         console.log('performRAGSearch called with params:', searchParams);
         
-        // Perform regular search FIRST - this is the critical part
-        const searchResults = await searchUsers(
-            searchParams.query || '', 
-            searchParams.filters || {}
-        );
-        
-        console.log('searchUsers returned results:', searchResults?.length || 0);
-        
-        // Get RAG context for the search results (optional enhancement)
+        // Get RAG context FIRST to find similar athletes
         let ragContext = [];
         try {
             ragContext = await searchWithRAG(
                 `${searchParams.query || ''} ${JSON.stringify(searchParams.filters || {})}`, 
-                5
+                10  // Get more results to have better fallback options
             );
             console.log('RAG context retrieved:', ragContext?.length || 0);
         } catch (ragError) {
@@ -178,8 +170,47 @@ export const performRAGSearch = async (searchParams, currentFilters = {}) => {
             ragContext = [];
         }
         
+        // Perform regular database search
+        const searchResults = await searchUsers(
+            searchParams.query || '', 
+            searchParams.filters || {}
+        );
+        
+        console.log('searchUsers returned results:', searchResults?.length || 0);
+        
+        // If database search is empty, try to fetch athletes from RAG results
+        let finalResults = searchResults || [];
+        
+        if (finalResults.length === 0 && ragContext.length > 0) {
+            console.log('Database search empty, fetching athletes from RAG metadata...');
+            const ragAthletes = [];
+            const seenIds = new Set();
+            
+            // Extract unique athlete IDs from RAG results
+            for (const ragResult of ragContext) {
+                const athleteId = ragResult.metadata?.athleteId;
+                if (athleteId && !seenIds.has(athleteId)) {
+                    seenIds.add(athleteId);
+                    try {
+                        const athlete = await getUserById(athleteId);
+                        if (athlete) {
+                            ragAthletes.push(athlete);
+                            console.log('Fetched athlete from RAG:', athlete.name || athlete.userName);
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to fetch athlete ${athleteId} from RAG:`, error);
+                    }
+                }
+            }
+            
+            if (ragAthletes.length > 0) {
+                console.log(`Found ${ragAthletes.length} athletes from RAG metadata`);
+                finalResults = ragAthletes;
+            }
+        }
+        
         return {
-            searchResults: searchResults || [],
+            searchResults: finalResults,
             ragContext: ragContext || [],
             searchParams
         };
@@ -187,19 +218,59 @@ export const performRAGSearch = async (searchParams, currentFilters = {}) => {
         console.error('RAG search error:', error);
         console.error('Error details:', error.message, error.stack);
         
-        // Even on error, try to return whatever we can get
+        // Even on error, try to get RAG results as fallback
         try {
+            let ragFallback = [];
+            try {
+                ragFallback = await searchWithRAG(
+                    `${searchParams.query || ''} ${JSON.stringify(searchParams.filters || {})}`, 
+                    10
+                );
+                
+                // Try to fetch athletes from RAG
+                if (ragFallback.length > 0) {
+                    const ragAthletes = [];
+                    const seenIds = new Set();
+                    
+                    for (const ragResult of ragFallback) {
+                        const athleteId = ragResult.metadata?.athleteId;
+                        if (athleteId && !seenIds.has(athleteId)) {
+                            seenIds.add(athleteId);
+                            try {
+                                const athlete = await getUserById(athleteId);
+                                if (athlete) {
+                                    ragAthletes.push(athlete);
+                                }
+                            } catch (fetchError) {
+                                // Ignore individual fetch errors
+                            }
+                        }
+                    }
+                    
+                    if (ragAthletes.length > 0) {
+                        return {
+                            searchResults: ragAthletes,
+                            ragContext: ragFallback,
+                            searchParams
+                        };
+                    }
+                }
+            } catch (ragError) {
+                console.warn('RAG fallback also failed:', ragError);
+            }
+            
+            // Last resort: try database search
             const fallbackResults = await searchUsers(
                 searchParams.query || '', 
                 searchParams.filters || {}
             );
             return {
                 searchResults: fallbackResults || [],
-                ragContext: [],
+                ragContext: ragFallback || [],
                 searchParams
             };
         } catch (fallbackError) {
-            console.error('Fallback search also failed:', fallbackError);
+            console.error('All fallback methods failed:', fallbackError);
             return {
                 searchResults: [],
                 ragContext: [],
