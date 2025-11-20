@@ -354,7 +354,7 @@ import {
 
 #### **React State Management**
 
-**Current Pattern Used:**
+**Pattern Used:**
 
 - **Local State**: `useState` for component-specific data
 - **Firestore as State Source**: Real-time listeners
@@ -378,312 +378,9 @@ useEffect(() => {
 **Why This Works:**
 
 - **Firestore listeners**: Automatic state updates
+- **No Redux needed**: Firestore handles shared state
 - **Simple**: Less boilerplate
-- **Effective**: Works well for current use case
-- **Real-time sync**: Automatic state synchronization
-
----
-
-#### **Redux State Management**
-
-**Current Status:** Redux **is implemented** in the application using Redux Toolkit for centralized state management. The architecture uses a hybrid approach combining Redux for UI state management with Firestore real-time listeners for database data.
-
-**Redux Implementation:**
-
-Redux is used alongside Firestore to manage application-wide state, providing:
-
-1. **Centralized State Management**: Redux store manages UI state, user preferences, and temporary application state across components.
-
-2. **Predictable State Updates**: Unidirectional data flow (Action → Reducer → Store → Component) ensures predictable state changes and easier debugging.
-
-3. **Time-Travel Debugging**: Redux DevTools integration allows developers to inspect state changes, replay actions, and debug state issues effectively.
-
-4. **Cross-Component State Sharing**: Redux eliminates prop drilling by providing global state access through `useSelector` and `useDispatch` hooks.
-
-**Redux Store Structure:**
-
-The Redux store is organized into slices for different state domains:
-
-1. **Auth Slice**: Manages user authentication state
-
-   ```javascript
-   // Manages: currentUser, isAuthenticated, loading states
-   ```
-
-2. **UI Slice**: Manages application UI state
-
-   ```javascript
-   // Manages: modals, sidebar state, notifications, theme preferences
-   ```
-
-3. **Search Slice**: Manages search-related state
-
-   ```javascript
-   // Manages: search query, filters, results, search history
-   ```
-
-4. **Chat Slice**: Manages chatbot state (if applicable)
-
-   ```javascript
-   // Manages: chat messages, typing indicators, RAG initialization status
-   ```
-
-**Redux Integration with Firebase:**
-
-Redux works alongside Firebase services:
-
-```javascript
-// Redux Store Configuration
-// store/index.js
-import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "./slices/authSlice";
-import uiReducer from "./slices/uiSlice";
-import searchReducer from "./slices/searchSlice";
-
-export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    ui: uiReducer,
-    search: searchReducer,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: ["firestore/update"],
-      },
-    }),
-});
-
-// App Setup with Redux Provider
-// index.jsx
-import { Provider } from "react-redux";
-import { store } from "./store";
-
-root.render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <RouterProvider router={router} />
-      <ToastContainer />
-    </Provider>
-  </React.StrictMode>
-);
-
-// Example Slice: Auth Slice
-// store/slices/authSlice.js
-import { createSlice } from "@reduxjs/toolkit";
-
-const authSlice = createSlice({
-  name: "auth",
-  initialState: {
-    user: null,
-    loading: false,
-    isAuthenticated: false,
-  },
-  reducers: {
-    setUser: (state, action) => {
-      state.user = action.payload;
-      state.isAuthenticated = !!action.payload;
-    },
-    setLoading: (state, action) => {
-      state.loading = action.payload;
-    },
-    logout: (state) => {
-      state.user = null;
-      state.isAuthenticated = false;
-    },
-  },
-});
-
-export const { setUser, setLoading, logout } = authSlice.actions;
-export default authSlice.reducer;
-
-// Using Redux in Components
-// components/Home.jsx
-import { useSelector, useDispatch } from "react-redux";
-import { setUser } from "../store/slices/authSlice";
-
-function Home() {
-  const user = useSelector((state) => state.auth.user);
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    // Sync Firebase auth with Redux
-    onAuthStateChanged(auth, (user) => {
-      dispatch(setUser(user));
-    });
-  }, [dispatch]);
-
-  return <div>Welcome {user?.name}</div>;
-}
-```
-
-**Hybrid Approach (Current Implementation):**
-
-The application uses a **hybrid approach** combining Redux and Firestore:
-
-```javascript
-// Redux: UI state, preferences, temporary state, cached data
-const reduxState = {
-  auth: {
-    user: currentUser,
-    isAuthenticated: true,
-    loading: false,
-  },
-  ui: {
-    theme: "dark",
-    sidebarOpen: true,
-    notifications: [],
-    modalOpen: false,
-  },
-  search: {
-    query: "",
-    filters: {},
-    history: [], // Cached for performance
-    recentResults: [],
-  },
-};
-
-// Firestore: Database data, real-time updates
-const firestoreState = {
-  posts: [], // From Firestore listeners (onSnapshot)
-  users: [], // From Firestore listeners
-  comments: [], // From Firestore listeners
-  likes: [], // From Firestore listeners
-};
-```
-
-**Benefits of Hybrid Approach:**
-
-- ✅ **Redux**: Manages UI state, user preferences, temporary data, cached search results
-- ✅ **Firestore**: Manages database data with real-time sync
-- ✅ **Best of both**: Predictable UI state + Real-time data synchronization
-- ✅ **Scalable**: Easy to add more state domains to Redux
-- ✅ **Performance**: Redux caches frequently accessed data, reducing Firestore reads
-- ✅ **Debugging**: Redux DevTools for UI state, Firebase console for data state
-
-**Redux Alternatives Considered:**
-
-1. **Context API**: Could be used for simple global state, but:
-
-   - No time-travel debugging
-   - Performance concerns with frequent updates
-   - Less structured than Redux
-
-2. **Zustand**: Lighter alternative to Redux:
-
-   - Less boilerplate
-   - Simpler API
-   - Good for smaller apps
-
-3. **Jotai/Recoil**: Atomic state management:
-   - Fine-grained reactivity
-   - Good for complex state dependencies
-   - More modern approach
-
-**Current Architecture Assessment:**
-
-Your Redux + Firestore hybrid approach is **well-suited** for the application because:
-
-1. ✅ **Redux handles UI state**: Centralized management of UI preferences, modals, search state
-2. ✅ **Firestore handles data**: Real-time listeners automatically sync database changes
-3. ✅ **Clear separation**: UI state (Redux) vs. Data state (Firestore)
-4. ✅ **Best performance**: Redux caches UI state, Firestore handles real-time data
-5. ✅ **Easy debugging**: Redux DevTools for UI state, Firebase console for data
-6. ✅ **Scalable**: Easy to add new slices as application grows
-
-**Redux Benefits in Your Application:**
-
-Redux provides value for:
-
-- ✅ **Global UI state**: Theme, sidebar, modals accessible from any component
-- ✅ **Search state management**: Query, filters, history cached in Redux
-- ✅ **User preferences**: Stored in Redux for quick access
-- ✅ **Performance optimization**: Caching frequently accessed data
-- ✅ **State persistence**: Can persist Redux state to localStorage
-- ✅ **Time-travel debugging**: Redux DevTools for development
-
-**Redux Store Structure:**
-
-```javascript
-// Complete Redux setup example
-// store/index.js
-import { configureStore } from "@reduxjs/toolkit";
-import authSlice from "./slices/authSlice";
-import uiSlice from "./slices/uiSlice";
-import searchSlice from "./slices/searchSlice";
-
-export const store = configureStore({
-  reducer: {
-    auth: authSlice,
-    ui: uiSlice,
-    search: searchSlice,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: ["firestore/update"],
-      },
-    }),
-});
-
-// store/slices/searchSlice.js
-import { createSlice } from "@reduxjs/toolkit";
-
-const searchSlice = createSlice({
-  name: "search",
-  initialState: {
-    query: "",
-    filters: {},
-    results: [],
-    history: [],
-  },
-  reducers: {
-    setQuery: (state, action) => {
-      state.query = action.payload;
-    },
-    setFilters: (state, action) => {
-      state.filters = action.payload;
-    },
-    setResults: (state, action) => {
-      state.results = action.payload;
-    },
-    addToHistory: (state, action) => {
-      state.history.unshift(action.payload);
-      state.history = state.history.slice(0, 10); // Keep last 10
-    },
-  },
-});
-
-export const { setQuery, setFilters, setResults, addToHistory } =
-  searchSlice.actions;
-export default searchSlice.reducer;
-
-// Usage in component
-import { useSelector, useDispatch } from "react-redux";
-import { setQuery, setFilters } from "../store/slices/searchSlice";
-
-function SearchComponent() {
-  const { query, filters, results } = useSelector((state) => state.search);
-  const dispatch = useDispatch();
-
-  const handleSearch = (newQuery) => {
-    dispatch(setQuery(newQuery));
-    // Firestore search still happens, but UI state in Redux
-  };
-
-  return <div>Search: {query}</div>;
-}
-```
-
-**Summary:**
-
-- **Current**: Redux Toolkit + Firestore hybrid approach
-- **Redux**: Manages UI state, user preferences, search state, cached data
-- **Firestore**: Manages database data with real-time synchronization
-- **Architecture**: Clear separation between UI state (Redux) and data state (Firestore)
-- **Benefits**: Predictable state management, time-travel debugging, performance optimization
-- **Scalability**: Easy to add new slices as application complexity grows
+- **Effective**: Works well for this use case
 
 ---
 
@@ -1095,31 +792,18 @@ export const postStatus = async (status, email, userName, userID, file) => {
 
 ---
 
-### **3. Why Redux + Firestore Hybrid Approach?**
+### **3. Why Firestore as State Source?**
 
-**Decision:** Use Redux for UI state and Firestore for database data
+**Decision:** Use Firestore listeners instead of Redux
 
 **Rationale:**
 
-- **Redux**: Predictable UI state management, time-travel debugging, centralized state
-- **Firestore**: Real-time data synchronization, automatic updates, server-side data
-- **Hybrid**: Best of both worlds - structured UI state + real-time data sync
+- Real-time sync built-in
+- Less boilerplate
+- Automatic updates
+- Simpler architecture
 
-**Architecture:**
-
-- ✅ **Redux**: UI state, user preferences, search state, cached data
-- ✅ **Firestore**: Database data (posts, users, comments) with real-time listeners
-- ✅ **Clear separation**: UI concerns vs. data concerns
-
-**Benefits:**
-
-- ✅ **Predictable**: Redux enforces unidirectional data flow
-- ✅ **Real-time**: Firestore automatically syncs database changes
-- ✅ **Debuggable**: Redux DevTools for UI state, Firebase console for data
-- ✅ **Performant**: Redux caches UI state, reduces re-renders
-- ✅ **Scalable**: Easy to add new slices and collections
-
-**Current Approach:** Redux for UI state, Firestore for data state, clear separation of concerns
+**Note:** Redux can be added if needed for complex cross-component state
 
 ---
 
@@ -1369,15 +1053,12 @@ const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 
 ### **Core Dependencies**
 
-| Library              | Version | Purpose          | Status         |
-| -------------------- | ------- | ---------------- | -------------- |
-| **react**            | 18.3.1  | UI framework     | ✅ Implemented |
-| **react-dom**        | 18.3.1  | DOM rendering    | ✅ Implemented |
-| **react-router-dom** | 6.28.0  | Routing          | ✅ Implemented |
-| **firebase**         | 11.2.0  | Backend services | ✅ Implemented |
-| **redux**            | Latest  | State management | ✅ Implemented |
-| **@reduxjs/toolkit** | Latest  | Redux utilities  | ✅ Implemented |
-| **react-redux**      | Latest  | Redux bindings   | ✅ Implemented |
+| Library              | Version | Purpose          |
+| -------------------- | ------- | ---------------- |
+| **react**            | 18.3.1  | UI framework     |
+| **react-dom**        | 18.3.1  | DOM rendering    |
+| **react-router-dom** | 6.28.0  | Routing          |
+| **firebase**         | 11.2.0  | Backend services |
 
 ### **UI & Styling**
 
