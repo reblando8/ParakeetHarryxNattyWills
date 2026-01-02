@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "../../../store/slices/authSlice";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { firestore } from "../../../firebaseConfig";
 import { updateUserData } from "../../../api/FirestoreAPI";
 
-export default function ProfileCard({ currentUser, onEdit }) {
+export default function ProfileCardEdit({ onEdit }) {
+    const dispatch = useDispatch();
+    const currentUser = useSelector((state) => state.auth.user);
 
     const [formData, setFormData] = useState({
         name: currentUser?.name || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || "",
@@ -23,6 +27,30 @@ export default function ProfileCard({ currentUser, onEdit }) {
         email: currentUser?.user?.email || currentUser?.email || "",
         updatedAt: new Date().toISOString()
     });
+
+    // Update form data when currentUser changes
+    useEffect(() => {
+        if (currentUser) {
+            setFormData({
+                name: currentUser?.name || `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`.trim() || "",
+                aboutMe: currentUser?.aboutMe || "",
+                sport: currentUser?.sport || "",
+                position: currentUser?.position || "",
+                team: currentUser?.team || "",
+                location: currentUser?.location || "",
+                height: currentUser?.height || "",
+                weight: currentUser?.weight || "",
+                achievements: currentUser?.achievements || "",
+                careerHighlights: currentUser?.careerHighlights || "",
+                stats: currentUser?.stats || "",
+                experience: currentUser?.experience || "",
+                education: currentUser?.education || "",
+                interests: currentUser?.interests || "",
+                email: currentUser?.user?.email || currentUser?.email || "",
+                updatedAt: new Date().toISOString()
+            });
+        }
+    }, [currentUser]);
     
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -33,9 +61,17 @@ export default function ProfileCard({ currentUser, onEdit }) {
     };
 
 
-    // Placeholder for the future update function
+    // Update profile function
     const handleUpdateProfile = async () => {
-        await updateUserData(currentUser?.userID, formData);
+        const userID = currentUser?.id || currentUser?.userID;
+        if (!userID) return;
+        
+        await updateUserData(userID, formData);
+        
+        // Update Redux state with new data
+        const updatedUser = { ...currentUser, ...formData };
+        dispatch(setUser(updatedUser));
+        
         onEdit();
     };
 

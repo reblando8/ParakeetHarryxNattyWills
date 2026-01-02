@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import SearchBar from "../common/SearchBar/SearchBar";
 import { searchUsers, saveSearchHistory } from "../../api/FirestoreAPI";
 import { useNavigate } from "react-router-dom";
 
-export default function SearchCenterComponent({currentUser, filters = {}, externalTrigger, onSearchComplete}) {
+export default function SearchCenterComponent({filters = {}, externalTrigger, onSearchComplete}) {
+    const currentUser = useSelector((state) => state.auth.user);
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');

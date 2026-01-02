@@ -96,7 +96,7 @@ export default function TopBar({currentUser}) {
                     <span className="text-sm font-medium text-gray-600">Notifications</span>
                 </div>
 
-                <ProfileMenu profileImage="your-profile-image-url.jpg" currentUser = {currentUser}/>
+                <ProfileMenu profileImage="your-profile-image-url.jpg" />
                             //testing comment
                             
             </div>

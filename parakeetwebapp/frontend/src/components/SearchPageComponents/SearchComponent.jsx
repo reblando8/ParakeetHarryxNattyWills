@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import SearchLeftComponent from "./SearchLeftComponent";
 import SearchRightComponent from "./SearchRightComponent";
 import SearchCenterComponent from "./SearchCenterComponent";
@@ -7,13 +8,14 @@ import ChatIcon from "../common/ChatBot/ChatIcon";
 import ChatPanel from "../common/ChatBot/ChatPanel";
 import { getRecentSearchHistory } from "../../api/FirestoreAPI";
 
-export default function SearchComponent({currentUser}) {
+export default function SearchComponent() {
+    const currentUser = useSelector((state) => state.auth.user);
     const [filters, setFilters] = useState({});
     const [history, setHistory] = useState([]);
     const [externalSearchTrigger, setExternalSearchTrigger] = useState({ query: '', filters: null });
     const [isChatOpen, setIsChatOpen] = useState(false);
 
-    console.log('SearchComponent received currentUser:', currentUser);
+    console.log('SearchComponent currentUser from Redux:', currentUser);
 
     const loadHistory = async () => {
         console.log('Current user object:', currentUser);
@@ -83,11 +85,11 @@ export default function SearchComponent({currentUser}) {
         <div className="flex w-full h-screen relative">
             <div className="w-64 flex-none hidden md:block">
                 <div className="w-full h-full">
-                    <SideBar currentUser={currentUser} />
+                    <SideBar />
                 </div>
             </div>
             <SearchLeftComponent onFiltersChange={handleFiltersChange}/>
-            <SearchCenterComponent currentUser={currentUser} filters={filters} externalTrigger={externalSearchTrigger} onSearchComplete={refreshHistory}/>
+            <SearchCenterComponent filters={filters} externalTrigger={externalSearchTrigger} onSearchComplete={refreshHistory}/>
             <SearchRightComponent history={history} onHistoryClick={handleHistoryClick}/>    
             
             {/* Chat Components */}
@@ -95,7 +97,6 @@ export default function SearchComponent({currentUser}) {
             <ChatPanel 
                 isOpen={isChatOpen} 
                 onClose={() => setIsChatOpen(false)} 
-                currentUser={currentUser}
                 onSearchRequest={handleChatSearchRequest}
                 currentFilters={filters}
                 onProfileClick={handleProfileClick}

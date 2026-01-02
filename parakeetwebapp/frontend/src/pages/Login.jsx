@@ -1,24 +1,20 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect} from 'react';
 import LoginComponent from "../components/LoginComponent";
-import { onAuthStateChanged } from 'firebase/auth';
-import {auth} from "../firebaseConfig.js"
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/common/Loader.jsx"
 
 
 export default function Login() {
-    const [loading, setLoading] = useState(true)
+    const navigate = useNavigate();
+    const { user, loading } = useSelector((state) => state.auth);
 
-    let navigate = useNavigate();
     useEffect(() => {
-        onAuthStateChanged(auth, res => {
-            if(res?.accessToken) {
-                navigate('/home')
-            } else {
-                setLoading(false)
-            }
-        });
-    }, []);
+        if (user) {
+            navigate('/home');
+        }
+    }, [user, navigate]);
+
     return loading ? <Loader/> : <LoginComponent />;
 }
 

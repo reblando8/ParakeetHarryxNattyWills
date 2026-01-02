@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { HiXMark, HiPaperAirplane } from 'react-icons/hi2';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
-import { analyzeUserQuery, generateSearchSummary } from '../../../api/OpenAiAPI';
-import { searchUsers } from '../../../api/FirestoreAPI';
+import { analyzeUserQuery, generateSearchSummary, getAthleteInfo } from '../../../api/OpenAiAPI';
+import { analyzeUserQueryWithRAG, performRAGSearch, getEnhancedAthleteInfo, initializeRAG } from '../../../api/RAGService';
+import { searchUsers, saveSearchHistory } from '../../../api/FirestoreAPI';
 import ChatProfileCard from './ChatProfileCard';
 
-export default function ChatPanel({ isOpen, onClose, currentUser, onSearchRequest, currentFilters, onProfileClick }) {
+export default function ChatPanel({ isOpen, onClose, onSearchRequest, currentFilters, onProfileClick }) {
+    const currentUser = useSelector((state) => state.auth.user);
+    
     const getUserName = () => {
         if (currentUser?.name) return currentUser.name;
         if (currentUser?.userName) return currentUser.userName;
@@ -15,6 +19,8 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [recentSearchResults, setRecentSearchResults] = useState([]);
+    const [ragInitialized, setRagInitialized] = useState(false);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -38,13 +44,42 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
             setMessages([
                 {
                     id: 1,
-                    text: `Hi ${getUserName()}! I'm your search assistant. I can help you find athletes, answer questions about sports, or guide you through using the search filters. What would you like to know?`,
+                    text: `Hi ${getUserName()}! I'm your AI-powered search assistant. I can help you find athletes, answer questions about sports, or guide you through using the search filters. I have access to detailed athlete information to provide more personalized recommendations. What would you like to know?`,
                     isBot: true,
                     timestamp: new Date()
                 }
             ]);
         }
     }, [isOpen, currentUser]);
+
+    // Initialize RAG when chat opens
+    useEffect(() => {
+        if (isOpen && !ragInitialized) {
+            initializeRAGWithAthletes();
+        }
+    }, [isOpen, ragInitialized]);
+
+    // Initialize RAG with athlete data
+    const initializeRAGWithAthletes = async () => {
+        try {
+            console.log('Starting RAG initialization...');
+            // Get some athlete data to initialize RAG
+            const athletes = await searchUsers('', {}); // Get all athletes
+            console.log('Found athletes for RAG:', athletes.length);
+            
+            if (athletes.length > 0) {
+                console.log('Initializing RAG with first', Math.min(athletes.length, 50), 'athletes');
+                await initializeRAG(athletes.slice(0, 50)); // Initialize with first 50 athletes
+                setRagInitialized(true);
+                console.log('RAG initialized successfully');
+            } else {
+                console.warn('No athletes found for RAG initialization');
+            }
+        } catch (error) {
+            console.error('Error initializing RAG:', error);
+            console.error('Error details:', error.message, error.stack);
+        }
+    };
 
     const handleSendMessage = async () => {
         if (!inputText.trim()) return;
@@ -62,18 +97,77 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
         setIsTyping(true);
 
         try {
-            // Use DeepSeek API to analyze the query
-            const analysis = await analyzeUserQuery(query, currentFilters || {});
+            // Use RAG-enhanced analysis if available, fallback to regular analysis
+            let analysis;
+            console.log('RAG initialized:', ragInitialized);
+            if (ragInitialized) {
+                console.log('Using RAG-enhanced analysis');
+                analysis = await analyzeUserQueryWithRAG(query, currentFilters || {}, recentSearchResults);
+                console.log('RAG analysis result:', analysis);
+            } else {
+                console.log('Using basic analysis');
+                analysis = await analyzeUserQuery(query, currentFilters || {});
+            }
             
-            if (analysis.action === 'SEARCH' && analysis.searchParams) {
-                // Perform the search
-                const searchResults = await searchUsers(
-                    analysis.searchParams.query || '', 
-                    analysis.searchParams.filters || {}
-                );
+            console.log('Analysis action:', analysis.action);
+            console.log('Analysis searchParams:', analysis.searchParams);
+            
+            if (analysis.action === 'SEARCH') {
+                // Ensure searchParams exists
+                if (!analysis.searchParams) {
+                    console.warn('SEARCH action but no searchParams, adding defaults');
+                    analysis.searchParams = {
+                        query: '',
+                        filters: {}
+                    };
+                }
                 
-                // Generate a summary of the search results
-                const summary = await generateSearchSummary(searchResults, analysis.searchParams.query, analysis.searchParams.filters);
+                // Ensure filters is an object
+                if (!analysis.searchParams.filters) {
+                    analysis.searchParams.filters = {};
+                }
+                
+                console.log('Processing SEARCH action with params:', analysis.searchParams);
+                // Perform RAG-enhanced search if available
+                let searchResults, summary;
+                if (ragInitialized) {
+                    console.log('Performing RAG search');
+                    const ragSearchResult = await performRAGSearch(analysis.searchParams, currentFilters || {});
+                    searchResults = ragSearchResult.searchResults;
+                    console.log('RAG search returned:', searchResults?.length || 0, 'results');
+                    summary = `Found ${searchResults.length} athletes matching your criteria. ${analysis.ragContext ? `\n\nBased on our database: ${analysis.ragContext}` : ''}`;
+                } else {
+                    console.log('Performing basic search');
+                    // Fallback to regular search
+                    searchResults = await searchUsers(
+                        analysis.searchParams.query || '', 
+                        analysis.searchParams.filters || {}
+                    );
+                    summary = await generateSearchSummary(searchResults, analysis.searchParams.query, analysis.searchParams.filters);
+                }
+                
+                console.log('Final searchResults:', searchResults);
+                console.log('SearchResults length:', searchResults?.length);
+                
+                // Store search results for athlete info queries
+                setRecentSearchResults(searchResults);
+                
+                // Save search history
+                if (currentUser?.id && analysis.searchParams) {
+                    try {
+                        await saveSearchHistory({
+                            userID: currentUser.id,
+                            queryText: analysis.searchParams.query || '',
+                            filters: analysis.searchParams.filters || {}
+                        });
+                        console.log('Search history saved from chat:', {
+                            query: analysis.searchParams.query,
+                            filters: analysis.searchParams.filters
+                        });
+                    } catch (error) {
+                        console.error('Error saving search history from chat:', error);
+                    }
+                }
                 
                 // Add the bot's response
                 const botMessage = {
@@ -82,21 +176,45 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                     isBot: true,
                     timestamp: new Date(),
                     searchResults: searchResults,
-                    searchParams: analysis.searchParams
+                    searchParams: analysis.searchParams,
+                    ragContext: analysis.ragContext || null
                 };
+                console.log('Bot message with searchResults:', botMessage.searchResults?.length || 0);
                 setMessages(prev => [...prev, botMessage]);
                 
                 // Trigger the search in the main component
                 if (onSearchRequest) {
                     onSearchRequest(analysis.searchParams);
                 }
-            } else {
-                // Regular chat response
+            } else if (analysis.action === 'ATHLETE_INFO' && analysis.athleteName) {
+                // Get enhanced athlete information if RAG is available
+                let athleteInfo;
+                if (ragInitialized) {
+                    athleteInfo = await getEnhancedAthleteInfo(analysis.athleteName, recentSearchResults);
+                } else {
+                    athleteInfo = await getAthleteInfo(analysis.athleteName, recentSearchResults);
+                }
+                
                 const botMessage = {
                     id: Date.now() + 1,
-                    text: analysis.response,
+                    text: athleteInfo,
                     isBot: true,
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    ragContext: analysis.ragContext || null
+                };
+                setMessages(prev => [...prev, botMessage]);
+            } else {
+                // Regular chat response with RAG context if available
+                const responseText = analysis.ragContext ? 
+                    `${analysis.response}\n\n*Based on our athlete database: ${analysis.ragContext}*` : 
+                    analysis.response;
+                
+                const botMessage = {
+                    id: Date.now() + 1,
+                    text: responseText,
+                    isBot: true,
+                    timestamp: new Date(),
+                    ragContext: analysis.ragContext || null
                 };
                 setMessages(prev => [...prev, botMessage]);
             }
@@ -120,6 +238,51 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage();
+        }
+    };
+
+    const handleTellMeMore = async (user) => {
+        const athleteName = user.name || user.userName || 'this athlete';
+        const query = `Tell me about ${athleteName}`;
+        
+        // Add user message
+        const userMessage = {
+            id: Date.now(),
+            text: query,
+            isBot: false,
+            timestamp: new Date()
+        };
+        setMessages(prev => [...prev, userMessage]);
+        
+        setIsTyping(true);
+        
+        try {
+            // Get enhanced athlete information if RAG is available
+            let athleteInfo;
+            if (ragInitialized) {
+                athleteInfo = await getEnhancedAthleteInfo(athleteName, recentSearchResults);
+            } else {
+                athleteInfo = await getAthleteInfo(athleteName, recentSearchResults);
+            }
+            
+            const botMessage = {
+                id: Date.now() + 1,
+                text: athleteInfo,
+                isBot: true,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, botMessage]);
+        } catch (error) {
+            console.error('Error getting athlete info:', error);
+            const botMessage = {
+                id: Date.now() + 1,
+                text: "I'm having trouble getting detailed information about this athlete right now. Please try again.",
+                isBot: true,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, botMessage]);
+        } finally {
+            setIsTyping(false);
         }
     };
 
@@ -147,7 +310,9 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                         </div>
                         <div>
                             <h3 className="font-semibold text-gray-900">Search Assistant</h3>
-                            <p className="text-sm text-gray-500">Online</p>
+                            <p className="text-sm text-gray-500">
+                                {ragInitialized ? 'AI-Powered (RAG Active)' : 'Online'}
+                            </p>
                         </div>
                     </div>
                     <button
@@ -193,6 +358,7 @@ export default function ChatPanel({ isOpen, onClose, currentUser, onSearchReques
                                                 key={user.id || index} 
                                                 user={user} 
                                                 onProfileClick={onProfileClick}
+                                                onTellMeMore={handleTellMeMore}
                                             />
                                         ))}
                                         {message.searchResults.length > 5 && (

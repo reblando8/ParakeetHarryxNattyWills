@@ -1,5 +1,7 @@
-import React, { useState } from "react";
-import { LoginAPI, RegisterAPI, GoogleSignInAPI } from "../api/authAPI.jsx";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser, googleSignIn } from "../store/slices/authSlice";
+import { getCurrentUserData } from "../api/FirestoreAPI";
 import logo from '../images/ParakeetLogo.png';
 import {toast} from "react-toastify"
 import { useNavigate } from "react-router-dom";
@@ -8,30 +10,34 @@ import { useNavigate } from "react-router-dom";
 export default function LoginComponent() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-
+    const dispatch = useDispatch();
+    const { user, loading, error } = useSelector((state) => state.auth);
     const navigate = useNavigate();
+
+    // Navigate to home when user is logged in
+    useEffect(() => {
+        if (user) {
+            toast.success("Signed In To Parakeet!");
+            navigate('/home');
+            if (user.email) {
+                localStorage.setItem("userEmail", user.email);
+            }
+        }
+    }, [user, navigate]);
+
+    // Show error if login fails
+    useEffect(() => {
+        if (error) {
+            toast.error(error || "Please Check Your Credentials");
+        }
+    }, [error]);
     
     const login = async () => {
-        try {
-            const res = await LoginAPI(email, password);
-            toast.success("Signed In To Parakeet!")
-            navigate('/home')
-            localStorage.setItem("userEmail", res.user.email)
-        } catch (error) {
-            console.error("Login failed:", error);
-            toast.error("Please Check Your Credentials") // Show popup
-        }
+        dispatch(loginUser({ email, password }));
     };
 
-    const googleSignIn = async () => {
-        try {
-            const res = await GoogleSignInAPI();
-            toast.success("Signed In To Parakeet!")
-            navigate('/home')
-            localStorage.setItem("userEmail", res.user.email)
-        } catch (error) {
-            console.log(error)
-        }
+    const handleGoogleSignIn = async () => {
+        dispatch(googleSignIn());
     };
 
     return (
@@ -66,9 +72,10 @@ export default function LoginComponent() {
                     />
                     <button
                         onClick={login}
-                        className="w-full bg-[#581DC1] text-white py-3 rounded-full text-lg font-bold hover:bg-blue-700 transition duration-200"
+                        disabled={loading}
+                        className="w-full bg-[#581DC1] text-white py-3 rounded-full text-lg font-bold hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
     >
-                        Log In to Parakeet
+                        {loading ? "Signing In..." : "Log In to Parakeet"}
                     </button>
                     <div id="or-separator" className="relative flex items-center my-6">
                         <div className="flex-grow border-t border-gray-300"></div>
@@ -76,8 +83,9 @@ export default function LoginComponent() {
                         <div className="flex-grow border-t border-gray-300"></div>
                     </div>
                     <button
-                        onClick={googleSignIn}
-                        className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 py-3 rounded-full text-lg font-medium hover:bg-gray-100 transition duration-200"
+                        onClick={handleGoogleSignIn}
+                        disabled={loading}
+                        className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 py-3 rounded-full text-lg font-medium hover:bg-gray-100 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo" className="w-6 h-6" />
                         Log In with Google
