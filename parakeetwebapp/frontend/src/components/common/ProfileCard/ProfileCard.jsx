@@ -1,11 +1,13 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import Post from "../Post";
 import { useState, useMemo} from "react";
 import { getSingleStatus, getSingleUser } from "../../../api/FirestoreAPI";
 import { useLocation } from "react-router-dom";
 import AboutMe from "../AboutMe/AboutMe";
 
-export default function ProfileCard({ currentUser, onEdit }) {
+export default function ProfileCard({ onEdit }) {
+    const reduxUser = useSelector((state) => state.auth.user);
     let location = useLocation();
     const [allStatus, setAllStatus] = useState([]);
     const [currentProfile, setCurrentProfile] = useState({});
@@ -23,7 +25,7 @@ export default function ProfileCard({ currentUser, onEdit }) {
     console.log("currentProfile", currentProfile);
 
     // Determine which data source to use
-    const profileData = Object.keys(currentProfile).length === 0 ? currentUser : currentProfile;
+    const profileData = Object.keys(currentProfile).length === 0 ? reduxUser : currentProfile;
     
     // Check if this is the current user's profile by comparing emails
     const isCurrentUserProfile = profileData?.email === localStorage.getItem('userEmail');

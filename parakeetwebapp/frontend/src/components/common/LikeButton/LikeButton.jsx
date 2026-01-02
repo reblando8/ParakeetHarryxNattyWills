@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
-import { likePost, getLikesByPost, checkIfUserLikedPost } from '../../../api/FirestoreAPI';
+import { likePostAsync } from '../../../store/slices/postsSlice';
+import { getLikesByPost, checkIfUserLikedPost } from '../../../api/FirestoreAPI';
 
 export default function LikeButton({ 
   userID,
@@ -9,6 +11,7 @@ export default function LikeButton({
   size = 'medium',
   className = ''
 }) {
+  const dispatch = useDispatch();
   const [likes, setLikes] = useState(0);
   const [isActive, setIsActive] = useState(false);
 
@@ -25,8 +28,9 @@ export default function LikeButton({
   }, [userID, postID]);
 
   const handleClick = async () => {
+    if (!userID || !postID) return;
     setIsActive(!isActive);
-    await likePost(userID, postID);
+    dispatch(likePostAsync({ userID, postID }));
   };
 
   const sizeClasses = {

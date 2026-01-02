@@ -1,18 +1,22 @@
-import { useState, useMemo} from "react";
+import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { FaRegImage, FaVideo, FaPen } from "react-icons/fa"; // Import icons
 import ModalComponent from "../Modal/Modal"
-import { postStatus, getStatus} from "../../../api/FirestoreAPI";
+import { getStatus } from "../../../api/FirestoreAPI";
+import { createPost, setPosts } from "../../../store/slices/postsSlice";
 import Post from "../Post"
 import { getUniqueID } from "../../../Helpers/getUniqueID";
 import { getCurrentTimeStamp } from "../../../Helpers/UseMoment";
 import { useNavigate } from "react-router-dom";
 import logo from '../../../images/profile-user-svgrepo-com.svg';
 
-export default function PostStatus({ currentUser }) {
-    const [modalOpen, setModalOpen] = useState(false);
-    const [status, setStatus] = useState('')
-    const [allStatus, setAllStatus] = useState([]);
+export default function PostStatus() {
+    const dispatch = useDispatch();
     const navigate = useNavigate();
+    const currentUser = useSelector((state) => state.auth.user);
+    const { posts } = useSelector((state) => state.posts);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [status, setStatus] = useState('');
 
     const goToRoute = (route, state) => {
         navigate(route, state);
@@ -22,22 +26,34 @@ export default function PostStatus({ currentUser }) {
         goToRoute('/profile',
             {
                 state: {
-                    id: currentUser?.userID, 
+                    id: currentUser?.id || currentUser?.userID, 
                     email: currentUser?.email
                 }
             }
         )
     };
 
-    const sendStatus = async () =>{
-        await postStatus(status, currentUser.email, currentUser.name, currentUser.id);
-        await setModalOpen(false);
-        await setStatus("");
+    const sendStatus = async () => {
+        if (!currentUser) return;
+        
+        dispatch(createPost({
+            status: status,
+            email: currentUser.email,
+            userName: currentUser.name || currentUser.userName,
+            userID: currentUser.id || currentUser.userID,
+            files: null
+        }));
+        
+        setModalOpen(false);
+        setStatus("");
     }
 
-    useMemo(() => {
-        getStatus(setAllStatus);
-    }, [])
+    useEffect(() => {
+        // Load posts from Firestore into Redux
+        getStatus((allPosts) => {
+            dispatch(setPosts(allPosts));
+        });
+    }, [dispatch])
 
     const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg p-4 w-full px-10 min-h-[110px]";
     const profileImgClass = "w-16 h-16 rounded-full cursor-pointer hover:opacity-80 transition-opacity border-2 border-gray-300";
@@ -89,8 +105,8 @@ export default function PostStatus({ currentUser }) {
                 sendStatus={sendStatus}
             />
             <div className="w-full">
-                {allStatus.map((posts)=> {
-                    return <Post posts={posts} key={posts.id}/>
+                {posts.map((post)=> {
+                    return <Post posts={post} key={post.id}/>
                 })}
             </div>
         </div>

@@ -88,7 +88,13 @@ export default function InfoHomeComponent() {
           </div>
           
           <div ref={heroImageRef} className="relative hidden lg:block">
-            <div className="w-full h-[600px] rounded-2xl bg-[#1a1a1a]" />
+            <div className="w-full h-[600px] rounded-2xl overflow-hidden border-2 border-orange-500/30">
+              <img 
+                src="https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80" 
+                alt="Basketball" 
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
         </div>
       </section>

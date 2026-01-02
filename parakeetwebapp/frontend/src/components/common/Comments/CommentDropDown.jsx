@@ -1,31 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { addComment, deleteComment, listenForComments } from '../../../api/FirestoreAPI';
+import { useDispatch, useSelector } from "react-redux";
+import { addCommentAsync, deleteCommentAsync, setComments } from '../../../store/slices/postsSlice';
+import { listenForComments } from '../../../api/FirestoreAPI';
 
 export default function CommentDropDown({ onAddComment, isOpen = false, postID, userID, userName }) {
-  const [comments, setComments] = useState([]);
+  const dispatch = useDispatch();
+  const comments = useSelector((state) => state.posts.comments[postID] || []);
   const [newComment, setNewComment] = useState("");
 
   // Fetch comments in real-time when dropdown is open
   useEffect(() => {
-    if (isOpen) {
-      const unsubscribe = listenForComments(postID, setComments);
+    if (isOpen && postID) {
+      const unsubscribe = listenForComments(postID, (comments) => {
+        dispatch(setComments({ postID, comments }));
+      });
       return () => unsubscribe(); // Cleanup listener
     }
-  }, [isOpen, postID]);
+  }, [isOpen, postID, dispatch]);
 
   const handleInputChange = (e) => {
     setNewComment(e.target.value);
   };
 
   const handleAddComment = async () => {
-    if (newComment.trim() === "") return;
-    await addComment(postID, userID, userName, newComment);
+    if (newComment.trim() === "" || !userID || !userName) return;
+    dispatch(addCommentAsync({ postID, userID, userName, text: newComment }));
     setNewComment(""); // Clear input after adding
     if (onAddComment) onAddComment(); // Call optional parent function if provided
   };
 
   const handleDeleteComment = async (commentID) => {
-    await deleteComment(postID, commentID);
+    if (!commentID) return;
+    dispatch(deleteCommentAsync({ postID, commentID }));
   };
 
   return (

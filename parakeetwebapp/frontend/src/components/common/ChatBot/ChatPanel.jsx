@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { HiXMark, HiPaperAirplane } from 'react-icons/hi2';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 import { analyzeUserQuery, generateSearchSummary, getAthleteInfo } from '../../../api/OpenAiAPI';
@@ -6,7 +7,9 @@ import { analyzeUserQueryWithRAG, performRAGSearch, getEnhancedAthleteInfo, init
 import { searchUsers, saveSearchHistory } from '../../../api/FirestoreAPI';
 import ChatProfileCard from './ChatProfileCard';
 
-export default function ChatPanel({ isOpen, onClose, currentUser, onSearchRequest, currentFilters, onProfileClick }) {
+export default function ChatPanel({ isOpen, onClose, onSearchRequest, currentFilters, onProfileClick }) {
+    const currentUser = useSelector((state) => state.auth.user);
+    
     const getUserName = () => {
         if (currentUser?.name) return currentUser.name;
         if (currentUser?.userName) return currentUser.userName;

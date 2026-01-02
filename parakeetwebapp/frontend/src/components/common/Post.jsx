@@ -1,24 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import LikeButton from './LikeButton/LikeButton';
-import { getCurrentUserData } from '../../api/FirestoreAPI';
 import { FaRegComment, FaRetweet, FaRegPaperPlane } from 'react-icons/fa';
 import CommentDropDown from './Comments/CommentDropDown';
 
 export default function Post({ posts, key }) {
     const outerCardClass = "bg-white border border-gray-300 shadow-md rounded-lg pb-0 pt-4 px-4 w-full min-h-[120px] h-auto"; 
     let navigate = useNavigate();
+    const currentUser = useSelector((state) => state.auth.user);
 
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleDropdown = () => {
         setIsOpen(!isOpen);
     };
-
-    const [currentUser, setCurrentUser] = useState({});
-    useMemo(() => {
-        getCurrentUserData(setCurrentUser);
-    }, []);
 
     const goToRoute = (route, state) => {
         navigate(route, state);
@@ -68,7 +64,7 @@ export default function Post({ posts, key }) {
                     <div 
                         onClick={handleToggleDropdown}
                     >
-                        <LikeButton userID={currentUser?.id} postID={posts.id} onClick={[handleToggleDropdown, () => console.log("should change")]} />
+                        <LikeButton userID={currentUser?.id || currentUser?.userID} postID={posts.id} onClick={[handleToggleDropdown, () => console.log("should change")]} />
                     </div>
                     <button
                         onClick={handleToggleDropdown}
@@ -99,8 +95,8 @@ export default function Post({ posts, key }) {
                     <CommentDropDown 
                         isOpen={isOpen} 
                         postID={posts.id} 
-                        userID={currentUser?.id} 
-                        userName={currentUser?.name} 
+                        userID={currentUser?.id || currentUser?.userID} 
+                        userName={currentUser?.name || currentUser?.userName} 
                     />
                 )}
             </div>

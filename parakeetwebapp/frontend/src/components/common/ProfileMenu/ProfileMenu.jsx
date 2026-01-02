@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { logoutUser } from "../../../store/slices/authSlice";
 import { IoChevronDown } from "react-icons/io5";
-import { LogoutAPI } from "../../../api/authAPI.jsx";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-export default function ProfileMenu({currentUser}) {
+export default function ProfileMenu() {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const currentUser = useSelector((state) => state.auth.user);
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef(null); // Ref for detecting off-click
-    const navigate = useNavigate();
     let profileImage =  "https://www.gravatar.com/avatar/?d=mp"; // Default avatar
 
     const toggleMenu = () => {
@@ -16,7 +19,7 @@ export default function ProfileMenu({currentUser}) {
 
     const logout = async () => {
         try {
-            await LogoutAPI();
+            dispatch(logoutUser());
             toast.success("Logged Out Successfully!");
             navigate('/login');
         } catch (error) {
@@ -71,7 +74,7 @@ export default function ProfileMenu({currentUser}) {
                         className="block w-full text-center px-4 py-2 text-gray-700 font-medium rounded-md cursor-pointer transition"
                         onClick={viewProfile}
                     >
-                        {currentUser.name}
+                        {currentUser?.name || currentUser?.userName || currentUser?.email || "User"}
                     </div>
                     {/* View Profile Button */}
                     <button 

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { logoutUser } from '../../store/slices/authSlice';
 import logo from '../../images/ParakeetLogo.png';
 import { AiFillHome, AiOutlineSearch } from "react-icons/ai";
 import { BsPeopleFill, BsChatDotsFill, BsBellFill } from "react-icons/bs";
@@ -7,11 +9,12 @@ import { MdTask, MdSchedule } from "react-icons/md";
 import { FiLogOut } from "react-icons/fi";
 import { CgProfile } from "react-icons/cg";
 import { useNavigate } from 'react-router-dom';
-import { LogoutAPI } from "../../api/authAPI.jsx";
 import { toast } from "react-toastify";
 
-export default function SideBar({ currentUser }) {
-    let navigate = useNavigate();
+export default function SideBar() {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const currentUser = useSelector((state) => state.auth.user);
 
     const goToRoute = (route) => {
         navigate(route);
@@ -25,17 +28,16 @@ export default function SideBar({ currentUser }) {
         goToProfileRoute('/profile',
             {
                 state: {
-                    id: currentUser?.userID, 
+                    id: currentUser?.id || currentUser?.userID, 
                     email: currentUser?.email
                 }
             }
         )
     };
 
-
     const logout = async () => {
         try {
-            await LogoutAPI();
+            dispatch(logoutUser());
             toast.success("Logged Out Successfully!");
             navigate('/login');
         } catch (error) {
